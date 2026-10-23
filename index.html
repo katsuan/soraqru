@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ja" data-ls-dark="auto">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>そらくる｜空のごきげん、先どり</title>
+<meta name="description" content="そらくる（SoraQru）。今日・明日の天気と気温、気圧の変化の目安を、時間ごとの色の帯でひと目で。無料・登録なし。地点はこの端末の中だけに覚えます。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="そらくる（SoraQru）">
+<meta property="og:title" content="そらくる｜空のごきげん、先どり">
+<meta property="og:description" content="今日・明日の天気と、気圧の変化の目安を、時間ごとの色の帯でひと目で。">
+<meta property="og:url" content="https://katsuan.github.io/soraqru/">
+<meta property="og:image" content="https://katsuan.github.io/soraqru/ogp.png?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="そらくる（SoraQru）：空のごきげん、先どり">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#eef1fd" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#16151a" media="(prefers-color-scheme: dark)">
+<!-- 確認がすむまで、検索に出さない（公開するときに外す） -->
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://api.open-meteo.com">
+<link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css">
+<link rel="stylesheet" href="style.css?v=202610231700">
+</head>
+<body>
+<main class="ls-page ls-stack">
+  <header class="ls-brand">
+    <h1 class="ls-brand-name"><img class="ls-brand-icon" src="icon.svg" alt="" width="30" height="30">そらくる</h1>
+    <img class="ls-brand-logo" src="logo.svg" alt="SoraQru" width="97" height="28">
+  </header>
+  <p class="ls-brand-copy">空のごきげん、先どり</p>
+
+  <!-- 地点の切りかえ -->
+  <nav id="placeBar" class="ls-chips place-bar" aria-label="地点"></nav>
+
+  <!-- 地点を足す（押したとき・現在地が使えないとき） -->
+  <section id="addPanel" class="ls-panel" aria-labelledby="addTitle" hidden>
+    <h2 id="addTitle" class="ls-panel-title">📍 地点を足す</h2>
+    <p id="geoNote" class="ls-hint geo-note" hidden></p>
+    <form id="searchForm" class="search-row" role="search">
+      <input id="searchInput" class="ls-input" type="search" maxlength="40" placeholder="地名（例：名古屋）" autocomplete="off" enterkeyhint="search" aria-label="地名">
+      <button class="ls-button is-primary" type="submit">探す</button>
+    </form>
+    <p id="searchError" class="ls-hint is-error" role="alert" hidden></p>
+    <ul id="results" class="results" aria-label="見つかった地点"></ul>
+    <div id="nameBox" class="name-box" hidden>
+      <p class="sub-title">「<span id="pickedName"></span>」をなんと呼ぶ？</p>
+      <div id="emojiPick" class="emojis" role="radiogroup" aria-label="しるし"></div>
+      <label class="ls-field">
+        <span class="ls-label">呼び名（なくてもOK）</span>
+        <input id="placeName" class="ls-input" maxlength="12" placeholder="例：実家・職場" autocomplete="off" enterkeyhint="done">
+      </label>
+      <button id="savePlace" class="ls-button is-primary is-block" type="button">＋ 地点を覚える</button>
+    </div>
+    <div class="form-actions">
+      <button id="useHere" class="ls-button is-block" type="button">📍 いまの場所を足す</button>
+      <button id="addCancel" class="ls-button is-block" type="button">やめる</button>
+    </div>
+  </section>
+
+  <!-- 受けとったリンクの地点（覚えるまで、この中だけ） -->
+  <section id="visitPanel" class="ls-panel visit" hidden>
+    <p class="visit-text">送ってもらった「<b id="visitName"></b>」を見ています</p>
+    <div class="form-actions">
+      <button id="visitSave" class="ls-button is-primary is-block" type="button">＋ 地点に覚える</button>
+      <button id="visitClose" class="ls-button is-block" type="button">閉じる</button>
+    </div>
+  </section>
+
+  <!-- いま -->
+  <section id="nowPanel" class="ls-panel now" aria-labelledby="nowPlace" aria-busy="true">
+    <div class="now-head">
+      <h2 id="nowPlace" class="now-place">現在地</h2>
+      <span id="nowAt" class="now-at"></span>
+    </div>
+    <div id="nowBody" class="now-body">
+      <div class="ls-skeleton now-skeleton"></div>
+    </div>
+    <p id="nowNote" class="ls-hint now-note" hidden></p>
+    <button id="retry" class="ls-button is-block" type="button" hidden>🔄 もう一度</button>
+  </section>
+
+  <!-- 今日・明日 -->
+  <div id="days" class="ls-stack"></div>
+
+  <!-- 送る -->
+  <section id="sendPanel" class="ls-panel" aria-labelledby="sendTitle" hidden>
+    <h2 id="sendTitle" class="ls-panel-title">📤 家族や友だちに</h2>
+    <p class="ls-hint">今日・明日の天気と、気圧の変化の目安が大きくなる時間を、1枚のカードにまとめて送れます。</p>
+    <a id="cardBtn" class="ls-button is-block line" href="#">💬 LINEで送る<small>（おくるん）</small></a>
+  </section>
+
+  <div class="ls-folds">
+    <details class="ls-fold" id="aboutFold">
+      <summary><span class="ls-fold-icon" aria-hidden="true">🌀</span>気圧の変化の目安について</summary>
+      <div class="ls-fold-body">
+        <ul class="legend" aria-label="色の意味"></ul>
+        <p class="ls-hint">3時間前とくらべて、気圧がどれだけ変わるか（上がっても下がっても）で4つに分けています。1 hPa 未満＝通常、2 hPa 未満＝やや注意、3 hPa 未満＝注意、それ以上＝警戒。</p>
+        <p class="ls-hint">天気予報の気圧から出した目安で、体調の予測や診断ではありません。つらいときは無理をせず、お医者さんに相談してね。</p>
+      </div>
+    </details>
+
+    <details class="ls-fold" id="placesFold">
+      <summary><span class="ls-fold-icon" aria-hidden="true">🔒</span>覚えた地点<span id="placesMeta" class="ls-fold-meta"></span></summary>
+      <div class="ls-fold-body">
+        <p class="ls-hint">地点と天気の結果は、この端末（ブラウザ）の中だけに残します。現在地は 1km くらいに丸めて覚えます。</p>
+        <ul id="placeList" class="place-list"></ul>
+        <button id="clearAll" class="link danger" type="button">この端末の記録をすべて消す</button>
+      </div>
+    </details>
+  </div>
+
+  <p class="credit">天気データ：<a href="https://open-meteo.com/" target="_blank" rel="noopener">Open-Meteo.com</a>（<a href="https://creativecommons.org/licenses/by/4.0/deed.ja" target="_blank" rel="noopener">CC BY 4.0</a>）</p>
+  <p id="status" class="status" role="status"></p>
+  <div data-tool-share></div>
+</main>
+
+<script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
+<script src="https://katsuan.github.io/line-share/shared/ui.js" defer></script>
+<script type="module" src="app.js?v=202610231700"></script>
+<script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="soraqru" defer></script>
+<script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "name": "そらくる（SoraQru）",
+  "short_name": "そらくる",
+  "description": "空のごきげん、先どり。今日・明日の天気と、気圧の変化の目安。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eef1fd",
+  "theme_color": "#3a56d6",
+  "lang": "ja",
+  "icons": [
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}
