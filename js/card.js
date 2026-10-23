@@ -1,5 +1,5 @@
 // そらくる（SoraQru）：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身。画面には触らない（テストで呼ぶ）
-import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, weatherOf, addDays, localYmd } from "./meteo.js?v=202610232249";
+import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, weatherOf, addDays, localYmd } from "./meteo.js?v=202610232252";
 
 export const PAGE_URL = "https://katsuan.github.io/soraqru/";
 export const CARD_COLOR = "#3A56D6"; // ロゴの群青
@@ -35,27 +35,38 @@ export function openUrl(place) {
   return `${PAGE_URL}?${String(q).replace(/\+/g, "%20")}`;
 }
 
-/** カードの中身（URLSearchParams）。place は { name, lat, lon, src } */
-export function cardParams(place, data, now = new Date()) {
+/** 1日ぶんのカード（index 0＝今日・1＝明日）。place は { name, lat, lon, src } */
+export function dayCard(place, data, index, now = new Date()) {
   const name = place?.name || "現在地";
-  const today = localYmd(now, data.offset);
-  const lines = [dayText(data, 0, now), dayText(data, 1, now)].filter(Boolean);
-  let detail = lines.join("\n\n");
+  const key = addDays(localYmd(now, data.offset), index);
+  const day = index ? "明日" : "今日";
+  let detail = dayText(data, index, now).replace(/^【[^】]*】\n/, "") || "この日の情報がまだありません";
   const tail = `\n\n気圧は3時間の変わり方から出した目安です。\n${CREDIT}`;
   if ([...detail].length + [...tail].length > DETAIL_MAX) detail = [...detail].slice(0, DETAIL_MAX - [...tail].length - 1).join("") + "…";
   return new URLSearchParams({
-    headerTitle: "🌤️ 空のごきげん",
-    title: `${name}の今日・明日`,
-    date: `${dayLabel(today)}・${dayLabel(addDays(today, 1))}`,
+    headerTitle: `🌤️ ${day}の空のごきげん`,
+    title: `${name}の${day}`,
+    date: dayLabel(key),
     showDate: "true",
     detail: detail + tail,
     theme: "custom",
     customColor: CARD_COLOR,
     showAction: "true",
     actionLabel: "🌤️ そらくるで見る",
-    actionUrl: openUrl(place),
-    from: "soraqru"
+    actionUrl: openUrl(place)
   });
+}
+
+/**
+ * おくるんのお知らせカードに渡す中身。days は送る日（[0, 1]＝今日と明日の2枚・[0]＝今日だけ・[1]＝明日だけ）。
+ * 2枚のときは、2枚目を card= に入れる（おくるんが横に並べて1通で送る）
+ */
+export function cardParams(place, data, now = new Date(), days = [0, 1]) {
+  const list = (days.length ? days : [0, 1]).filter((d) => d === 0 || d === 1);
+  const [first, ...rest] = list.map((d) => dayCard(place, data, d, now));
+  for (const card of rest) first.append("card", String(card).replace(/\+/g, "%20"));
+  first.set("from", "soraqru");
+  return first;
 }
 
 export { LEVELS };

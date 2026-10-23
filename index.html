@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css">
-<link rel="stylesheet" href="style.css?v=202610232249">
+<link rel="stylesheet" href="style.css?v=202610232252">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -92,7 +92,12 @@
   <!-- 送る -->
   <section id="sendPanel" class="ls-panel" aria-labelledby="sendTitle" hidden>
     <h2 id="sendTitle" class="ls-panel-title">📤 家族や友だちに</h2>
-    <p class="ls-hint">今日・明日の天気と、気圧の変化の目安が大きくなる時間を、1枚のカードにまとめて送れます。</p>
+    <p class="ls-hint">天気と、気圧の変化の目安が大きくなる時間を、1日1枚のカードにして送れます（今日と明日なら、横に並んだ2枚）。</p>
+    <div id="sendDays" class="ls-chips send-days" role="radiogroup" aria-label="送る日">
+      <button class="ls-chip" type="button" role="radio" aria-checked="true" data-days="0,1">今日と明日</button>
+      <button class="ls-chip" type="button" role="radio" aria-checked="false" data-days="0">今日だけ</button>
+      <button class="ls-chip" type="button" role="radio" aria-checked="false" data-days="1">明日だけ</button>
+    </div>
     <a id="cardBtn" class="ls-button is-block line" href="#">💬 LINEで送る<small>（おくるん）</small></a>
   </section>
 
@@ -123,7 +128,7 @@
 
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js" defer></script>
-<script type="module" src="app.js?v=202610232249"></script>
+<script type="module" src="app.js?v=202610232252"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="soraqru" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

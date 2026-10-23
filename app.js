@@ -2,9 +2,9 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610232249";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610232249";
-import { cardParams } from "./js/card.js?v=202610232249";
+} from "./js/meteo.js?v=202610232252";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610232252";
+import { cardParams } from "./js/card.js?v=202610232252";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -16,6 +16,7 @@ const ui = {
   emoji: PLACE_EMOJIS[1],
   geo: "", // 現在地のようす（""・"wait"・"denied"・"none"）
   shown: null, // いま出している { place, data, at }
+  sendDays: [0, 1], // 送る日（0＝今日・1＝明日）
   seq: 0
 };
 
@@ -418,8 +419,23 @@ function render(place, data, at, note) {
   if (nowCell) nowCell.parentElement.scrollLeft = Math.max(0, nowCell.offsetLeft - 8);
 
   $("sendPanel").hidden = false;
-  $("cardBtn").href = window.OQRN ? window.OQRN.cardUrl(cardParams(place, data, now)) : "#";
+  renderSend();
 }
+
+// 送る日を選ぶ（今日と明日の2枚・今日だけ・明日だけ）
+function renderSend() {
+  const s = ui.shown;
+  const key = ui.sendDays.join(",");
+  $("sendDays").querySelectorAll("[data-days]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.days === key)));
+  if (!s) return;
+  $("cardBtn").href = window.OQRN ? window.OQRN.cardUrl(cardParams(s.place, s.data, new Date(), ui.sendDays)) : "#";
+}
+$("sendDays").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-days]");
+  if (!b) return;
+  ui.sendDays = b.dataset.days.split(",").map(Number);
+  renderSend();
+});
 
 const deg = (v) => (v === null || v === undefined ? "—" : `${Math.round(v)}°`);
 

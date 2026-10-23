@@ -258,7 +258,8 @@ function oqrnFlex(cardUrl) {
   for (const file of ["core.js", "storage.js", "state.js", "url.js", "deck.js", "render.js", "kinds.js", "soccer.js", "flex.js", "templates.js"]) {
     vm.runInContext(fs.readFileSync(path.join(dir, file), "utf8"), ctx, { filename: file });
   }
-  return JSON.parse(JSON.stringify(vm.runInContext("state = hydrate(getQueryState(new URLSearchParams(location.search))); buildFlexMessage()", ctx)));
+  // 2枚以上なら横に並べて1通（おくるんの buildDeckMessage と同じ）
+  return JSON.parse(JSON.stringify(vm.runInContext("cards = getQueryStates().map(hydrate); current = 0; state = cards[0]; buildDeckMessage({ credit: false })", ctx)));
 }
 
 function cardUrl(params) {
@@ -267,34 +268,49 @@ function cardUrl(params) {
   return sandbox.window.OQRN.cardUrl(params);
 }
 
-test("カード：今日・明日の注意の時間帯と天気、出典、流入口", () => {
+test("カード：1日1枚。今日と明日は2枚（2枚目は card=）・今日だけ・明日だけ。出典と流入口", () => {
   // 今日の 15〜17 時に大きく下がる
   const data = M.parseForecast(sample({ pressure: (h) => (h >= 15 && h <= 17 ? 1013 - (h - 14) * 1.2 : h > 17 ? 1009.4 : 1013) }), NOW);
-  const p = C.cardParams({ name: "名古屋", lat: 35.18, lon: 136.91, src: "search" }, data, NOW);
+  const place = { name: "名古屋", lat: 35.18, lon: 136.91, src: "search" };
+  const p = C.cardParams(place, data, NOW);
   assert.equal(p.get("from"), "soraqru");
-  assert.equal(p.get("title"), "名古屋の今日・明日");
-  assert.equal(p.get("date"), "10/23（金）・10/24（土）");
-  const detail = p.get("detail");
-  // 見出し・天気・気圧の時間帯は、それぞれ1行に
-  assert.match(detail, /^【今日 10\/23（金）】\n🌧️ 雨 22°\/14° ☔60%\n🌀 気圧（10時から）\n・15〜20時 警戒（下がる）\n\n/);
-  // 夜に送ると、今日はこれからの時間だけ
-  const night = C.cardParams(null, M.parseForecast(sample(), NOW), new Date("2026-10-23T13:30:00Z")).get("detail");
-  assert.match(night, /🌀 気圧（22時から）：通常/);
-  assert.match(detail, /【明日 10\/24（土）】\n☁️ くもり 19°\/12° ☔30%\n🌀 気圧：1日を通して 通常/);
-  // 時間帯がいくつもある日は、1つずつの行に（4つ目からは「ほか」）
-  const many = C.cardParams(null, M.parseForecast(sample({ pressure: (h) => 1013 + (Math.floor(h / 3) % 2 ? 0 : (h % 3) * 1.5) }), NOW), new Date("2026-10-22T15:30:00Z")).get("detail");
-  assert.match(many, /🌀 気圧\n・\d+〜\d+時 [^\n]+\n・\d+〜\d+時 [^\n]+\n・\d+〜\d+時 [^\n]+\n・ほか\d+か所/);
-  assert.match(detail, /天気データ：Open-Meteo\.com（CC BY 4\.0）/);
-  assert.ok([...detail].length <= 300);
-  assert.doesNotMatch(detail, /頭痛/);
+  assert.equal(p.get("headerTitle"), "🌤️ 今日の空のごきげん");
+  assert.equal(p.get("title"), "名古屋の今日");
+  assert.equal(p.get("date"), "10/23（金）");
+  // 天気・気圧の時間帯は、それぞれ1行に
+  const today = p.get("detail");
+  assert.match(today, /^🌧️ 雨 22°\/14° ☔60%\n🌀 気圧（10時から）\n・15〜20時 警戒（下がる）\n\n/);
+  assert.match(today, /天気データ：Open-Meteo\.com（CC BY 4\.0）$/);
+  assert.doesNotMatch(today, /頭痛/);
   assert.equal(p.get("actionUrl"), "https://katsuan.github.io/soraqru/?at=35.18%2C136.91&name=%E5%90%8D%E5%8F%A4%E5%B1%8B");
+  // 2枚目（明日）
+  const cards = p.getAll("card");
+  assert.equal(cards.length, 1);
+  const tomorrow = new URLSearchParams(cards[0]);
+  assert.equal(tomorrow.get("title"), "名古屋の明日");
+  assert.equal(tomorrow.get("date"), "10/24（土）");
+  assert.match(tomorrow.get("detail"), /^☁️ くもり 19°\/12° ☔30%\n🌀 気圧：1日を通して 通常\n\n/);
+  assert.match(tomorrow.get("detail"), /Open-Meteo/);
+  for (const card of [p, tomorrow]) assert.ok([...card.get("detail")].length <= 300);
+  // 明日だけ・今日だけ
+  const only = C.cardParams(place, data, NOW, [1]);
+  assert.equal(only.get("title"), "名古屋の明日");
+  assert.equal(only.get("from"), "soraqru");
+  assert.deepEqual(only.getAll("card"), []);
+  assert.equal(C.cardParams(place, data, NOW, [0]).get("title"), "名古屋の今日");
+  // 夜に送ると、今日はこれからの時間だけ
+  const night = C.cardParams(null, M.parseForecast(sample(), NOW), new Date("2026-10-23T13:30:00Z"), [0]).get("detail");
+  assert.match(night, /🌀 気圧（22時から）：通常/);
+  // 時間帯がいくつもある日は、1つずつの行に（4つ目からは「ほか」）
+  const many = C.cardParams(null, M.parseForecast(sample({ pressure: (h) => 1013 + (Math.floor(h / 3) % 2 ? 0 : (h % 3) * 1.5) }), NOW), new Date("2026-10-22T15:30:00Z"), [0]).get("detail");
+  assert.match(many, /🌀 気圧\n・\d+〜\d+時 [^\n]+\n・\d+〜\d+時 [^\n]+\n・\d+〜\d+時 [^\n]+\n・ほか\d+か所/);
 });
 
 test("カード：現在地・いまの場所から足した地点は、場所をリンクに入れない", () => {
   const data = M.parseForecast(sample(), NOW);
   assert.equal(C.cardParams(null, data, NOW).get("actionUrl"), C.PAGE_URL);
   assert.equal(C.cardParams({ name: "実家", lat: 35.18, lon: 136.91, src: "gps" }, data, NOW).get("actionUrl"), C.PAGE_URL);
-  assert.equal(C.cardParams(null, data, NOW).get("title"), "現在地の今日・明日");
+  assert.equal(C.cardParams(null, data, NOW).get("title"), "現在地の今日");
 });
 
 test("カード：おくるんで組み立てた Flex を LINE が受けつける（長い名前・荒れた日・外からの文字でも）", () => {
@@ -304,20 +320,24 @@ test("カード：おくるんで組み立てた Flex を LINE が受けつけ�
     [{ name: XSS, lat: 35.18, lon: 136.91, src: "search" }, wild],
     [null, wild]
   ];
-  for (const [place, data] of cases) {
-    const params = C.cardParams(place, data, NOW);
+  for (const [[place, data], days] of cases.flatMap((c) => [[c, [0, 1]], [c, [0]], [c, [1]]])) {
+    const params = C.cardParams(place, data, NOW, days);
     const url = cardUrl(params);
     assert.ok(url.startsWith("https://liff.line.me/"));
     assert.doesNotMatch(url, /\+/); // 空白は %20
     const flex = oqrnFlex(url);
     const errors = checkMessages([flex]).filter((x) => x.level === "error");
     assert.deepEqual(errors, [], JSON.stringify(errors));
-    const texts = JSON.stringify(flex);
-    assert.match(texts, /Open-Meteo/);
-    // ボタンは、そらくるを開くリンク（あとで押されても困らない）
-    const buttons = flex.contents.footer.contents.filter((x) => x.type === "button");
-    assert.equal(buttons.length, 1);
-    assert.equal(buttons[0].action.type, "uri");
-    assert.ok(buttons[0].action.uri.startsWith(C.PAGE_URL));
+    // 今日と明日は横に並べた2枚、1日だけなら1枚
+    const bubbles = flex.contents.type === "carousel" ? flex.contents.contents : [flex.contents];
+    assert.equal(bubbles.length, days.length);
+    for (const bubble of bubbles) {
+      assert.match(JSON.stringify(bubble), /Open-Meteo/);
+      // ボタンは、そらくるを開くリンク（あとで押されても困らない）
+      const buttons = bubble.footer.contents.filter((x) => x.type === "button");
+      assert.equal(buttons.length, 1);
+      assert.equal(buttons[0].action.type, "uri");
+      assert.ok(buttons[0].action.uri.startsWith(C.PAGE_URL));
+    }
   }
 });
