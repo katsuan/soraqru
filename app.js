@@ -2,9 +2,9 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610231700";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610231700";
-import { cardParams } from "./js/card.js?v=202610231700";
+} from "./js/meteo.js?v=202610232249";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610232249";
+import { cardParams } from "./js/card.js?v=202610232249";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -431,7 +431,7 @@ function dayHtml(data, index, now, hour) {
     return `<section class="ls-panel day"><h2 class="day-title">${index ? "明日" : "今日"} <small>${esc(dayLabel(key))}</small></h2><p class="ls-hint">この日の情報がまだありません。</p></section>`;
   }
   const w = weatherOf(info?.code, 1);
-  const summary = daySummary(rows) || "気圧の情報がありません";
+  const summary = daySummary(rows, 4, "1日を通して 通常", "\n") || "気圧の情報がありません";
   const byHour = new Map(rows.map((r) => [r.hour, r]));
   const cells = Array.from({ length: 24 }, (_, h) => {
     const r = byHour.get(h);
@@ -456,7 +456,7 @@ function dayHtml(data, index, now, hour) {
       <p class="day-weather"><span aria-hidden="true">${esc(w.emoji)}</span> ${esc(w.label)} <b class="max">${esc(deg(info?.max))}</b>/<b class="min">${esc(deg(info?.min))}</b>${info?.pop === null || info?.pop === undefined ? "" : ` <span class="pop">☔${esc(Math.round(info.pop))}%</span>`}</p>
     </div>
     <p class="band-label">気圧の変化の目安</p>
-    <div class="band" role="img" aria-label="${esc(`気圧の変化の目安：${summary}`)}">${cells}</div>
+    <div class="band" role="img" aria-label="${esc(`気圧の変化の目安：${summary.replace(/\n/g, "、")}`)}">${cells}</div>
     <div class="axis" aria-hidden="true"><span>0</span><span>6</span><span>12</span><span>18</span><span>24時</span></div>
     <p class="summary">${esc(summary)}</p>
     <ol class="hours" aria-label="1時間ごとの天気">${hours}</ol>

@@ -92,7 +92,7 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .cell.is-past { opacity: var(--past); }
 .cell.is-now { outline: 2px solid var(--ls-text); outline-offset: 1px; z-index: 1; }
 .axis { display: flex; justify-content: space-between; margin-top: -4px; color: var(--ls-subtext); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.summary { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.5; }
+.summary { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.6; white-space: pre-line; }
 
 /* 1時間ごと：横に送る */
 .hours { display: grid; grid-auto-flow: column; grid-auto-columns: 50px; gap: 4px; margin: 2px -4px 0; padding: 4px 4px 6px; overflow-x: auto; list-style: none; scroll-snap-type: x proximity; scrollbar-width: thin; }

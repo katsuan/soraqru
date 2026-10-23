@@ -275,12 +275,15 @@ test("カード：今日・明日の注意の時間帯と天気、出典、流�
   assert.equal(p.get("title"), "名古屋の今日・明日");
   assert.equal(p.get("date"), "10/23（金）・10/24（土）");
   const detail = p.get("detail");
-  assert.match(detail, /【今日 10\/23（金）】🌧️ 雨 22°\/14° ☔60%/);
-  assert.match(detail, /気圧（10時から）：15〜20時 警戒（下がる）/);
+  // 見出し・天気・気圧の時間帯は、それぞれ1行に
+  assert.match(detail, /^【今日 10\/23（金）】\n🌧️ 雨 22°\/14° ☔60%\n🌀 気圧（10時から）\n・15〜20時 警戒（下がる）\n\n/);
   // 夜に送ると、今日はこれからの時間だけ
   const night = C.cardParams(null, M.parseForecast(sample(), NOW), new Date("2026-10-23T13:30:00Z")).get("detail");
-  assert.match(night, /気圧（22時から）：通常/);
-  assert.match(detail, /【明日 10\/24（土）】☁️ くもり 19°\/12° ☔30%\n気圧：1日を通して 通常/);
+  assert.match(night, /🌀 気圧（22時から）：通常/);
+  assert.match(detail, /【明日 10\/24（土）】\n☁️ くもり 19°\/12° ☔30%\n🌀 気圧：1日を通して 通常/);
+  // 時間帯がいくつもある日は、1つずつの行に（4つ目からは「ほか」）
+  const many = C.cardParams(null, M.parseForecast(sample({ pressure: (h) => 1013 + (Math.floor(h / 3) % 2 ? 0 : (h % 3) * 1.5) }), NOW), new Date("2026-10-22T15:30:00Z")).get("detail");
+  assert.match(many, /🌀 気圧\n・\d+〜\d+時 [^\n]+\n・\d+〜\d+時 [^\n]+\n・\d+〜\d+時 [^\n]+\n・ほか\d+か所/);
   assert.match(detail, /天気データ：Open-Meteo\.com（CC BY 4\.0）/);
   assert.ok([...detail].length <= 300);
   assert.doesNotMatch(detail, /頭痛/);

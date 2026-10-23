@@ -1,5 +1,5 @@
 // そらくる（SoraQru）：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身。画面には触らない（テストで呼ぶ）
-import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, weatherOf, addDays, localYmd } from "./meteo.js?v=202610231700";
+import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, weatherOf, addDays, localYmd } from "./meteo.js?v=202610232249";
 
 export const PAGE_URL = "https://katsuan.github.io/soraqru/";
 export const CARD_COLOR = "#3A56D6"; // ロゴの群青
@@ -16,11 +16,14 @@ export function dayText(data, index, now = new Date()) {
   const key = addDays(localYmd(now, data.offset), index);
   const w = weatherOf(info?.code, 1);
   const pop = info?.pop === null || info?.pop === undefined ? "" : ` ☔${Math.round(info.pop)}%`;
-  const head = `【${index ? "明日" : "今日"} ${dayLabel(key)}】${w.emoji} ${w.label} ${deg(info?.max)}/${deg(info?.min)}${pop}`;
+  // トークで読みやすいよう、見出し・天気・気圧の時間帯を、それぞれ1行に
+  const head = `【${index ? "明日" : "今日"} ${dayLabel(key)}】\n${w.emoji} ${w.label} ${deg(info?.max)}/${deg(info?.min)}${pop}`;
   // 今日は、これからの時間だけ（過ぎた時間の注意は送らない）
   const from = index ? 0 : localHourOf(now, data);
-  const summary = daySummary(from ? rows.filter((r) => r.hour >= from) : rows, 3, from ? "通常" : "1日を通して 通常");
-  return summary ? `${head}\n気圧${from ? `（${from}時から）` : ""}：${summary}` : head;
+  const summary = daySummary(from ? rows.filter((r) => r.hour >= from) : rows, 3, from ? "通常" : "1日を通して 通常", "\n・");
+  if (!summary) return head;
+  const title = `🌀 気圧${from ? `（${from}時から）` : ""}`;
+  return /〜/.test(summary) ? `${head}\n${title}\n・${summary}` : `${head}\n${title}：${summary}`;
 }
 
 const localHourOf = (now, data) => new Date(now.getTime() + data.offset * 1000).getUTCHours();

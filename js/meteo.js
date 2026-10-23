@@ -203,13 +203,14 @@ export function rangeText(r) {
   return `${r.from}〜${r.to}時 ${LEVELS[r.level].label}${dir}`;
 }
 
-/** その日のまとめ（1行）。気圧がない日は ""。calm は、ずっと通常のときの言い方 */
-export function daySummary(rows, max = 4, calm = "1日を通して 通常") {
+/** その日のまとめ。気圧がない日は ""。calm は、ずっと通常のときの言い方。sep は時間帯のあいだ（"\n" で1つずつの行に） */
+export function daySummary(rows, max = 4, calm = "1日を通して 通常", sep = "、") {
   if (!rows.some((r) => r.level !== null)) return "";
   const ranges = alertRanges(rows);
   if (!ranges.length) return calm;
   const shown = ranges.slice(0, max).map(rangeText);
-  return shown.join("、") + (ranges.length > max ? ` ほか${ranges.length - max}か所` : "");
+  if (ranges.length > max) shown.push(`ほか${ranges.length - max}か所`);
+  return shown.join(sep);
 }
 
 /** WMO の天気の番号 → { emoji, label }。day=0 は夜 */
