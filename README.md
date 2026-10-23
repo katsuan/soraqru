@@ -2,7 +2,7 @@
 
 今日・明日（48 時間）の天気と気温、気圧の変化の目安を、時間ごとの色の帯でひと目で見るツール。名前は「そらくる」（空のようすが先に来る）。英字は SoraQru（「く」を Q にする。おくるん＝OQRN・つづく＝TuzuQ と同じ作り方）。キャッチコピーは「空のごきげん、先どり」。GitHub Pages でそのまま動く静的サイトで、サーバーは使わない。
 
-確認用URL: https://katsuan.github.io/soraqru/ （まだ検索に出さない・ConneQt の一覧とポートフォリオに載せていない）
+公開URL: https://katsuan.github.io/soraqru/ （2026-10-23 公開。ConneQt の一覧・ポートフォリオにも載せた）
 
 完全に無料で、広告・有償の案内は出さない。天気は [Open-Meteo](https://open-meteo.com/)（無料・鍵なし）だけを使う。
 
@@ -63,8 +63,8 @@
 - Q は晴れ間：輪がまるごと黄色い太陽、右下へのびるしっぽは太陽にかかる白い雲。アイコンには太陽のまわりに短い光（ロゴの Q は、字と同じ大きさで読めるよう、輪と雲だけ）
 - 色はすみれ色がかった空から群青（ほかの Q のツールと重ならない空の色）
 
-## 公開するときにすること
+## 公開したときにしたこと
 
-1. 確かめがすんだら `index.html` の noindex を外す
-2. おくるん（line-share）の `data/hub-links.json` に `key: "soraqru"` を足す（グループは「くらし」など）。`backup/app.js` の一覧に `["soraqru:", "そらくる", "soraqru"]` を足す
-3. ポートフォリオに載せる
+1. `index.html` の noindex を外した
+2. おくるん（line-share）の `data/hub-links.json` に `key: "soraqru"`（グループは「毎日・あそび」）、`backup/app.js` の一覧に `["soraqru:", "そらくる", "soraqru"]` を足した
+3. ポートフォリオ（`portfolio-site` の `index.html`・`conneqt-tech.json`）に載せた
