@@ -51,6 +51,8 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 
 .visit { display: grid; gap: 10px; }
 .visit-text { margin: 0; font-weight: 700; }
+.visit .form-actions { grid-auto-flow: row; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.visit .ls-button { white-space: nowrap; }
 
 /* いま */
 .now { display: grid; gap: 10px; }
