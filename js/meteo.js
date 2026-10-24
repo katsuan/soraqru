@@ -156,6 +156,9 @@ export function addDays(ymd, n) {
 }
 
 const WEEK = ["日", "月", "火", "水", "木", "金", "土"];
+/** 気温 → "18°"（ないときは "—"） */
+export const deg = (v) => (v === null || v === undefined ? "—" : `${Math.round(v)}°`);
+
 /** "2026-10-23" → "10/23（金）" */
 export function dayLabel(ymd) {
   const d = new Date(`${ymd}T00:00:00Z`);

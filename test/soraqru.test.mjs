@@ -341,3 +341,11 @@ test("カード：おくるんで組み立てた Flex を LINE が受けつけ�
     }
   }
 });
+
+test("気温の書き方（カードと画面で同じ）：四捨五入して °。ないときは —", async () => {
+  const { deg } = await import("../js/meteo.js");
+  assert.equal(deg(17.5), "18°");
+  assert.equal(deg(-0.4), "0°");
+  assert.equal(deg(null), "—");
+  assert.equal(deg(undefined), "—");
+});

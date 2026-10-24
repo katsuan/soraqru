@@ -1,10 +1,10 @@
 // そらくる（SoraQru）：画面の操作。天気は Open-Meteo だけ（js/meteo.js）、地点と結果はこの端末の中だけ（js/store.js）
 import {
-  LEVELS, dayInfo, dayLabel, dayRows, daySummary, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
+  LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610241328";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610241328";
-import { cardParams } from "./js/card.js?v=202610241328";
+} from "./js/meteo.js?v=202610241359";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610241359";
+import { cardParams } from "./js/card.js?v=202610241359";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -70,12 +70,19 @@ function renderPlaceBar() {
     : '<li class="ls-hint">まだありません。上の「＋ 地点」から足せます。</li>';
 }
 
+// 送ってもらった地点の表示をやめる。アドレスの ?at= も消す（開きなおしても、また出ないように）
+function leaveVisit() {
+  if (!ui.visit) return;
+  ui.visit = null;
+  $("visitPanel").hidden = true;
+  history.replaceState(null, "", location.pathname);
+}
+
 $("placeBar").addEventListener("click", (e) => {
   if (e.target.closest("[data-add]")) return openAdd();
   const b = e.target.closest("[data-place]");
   if (!b) return;
-  ui.visit = null;
-  $("visitPanel").hidden = true;
+  leaveVisit();
   state.current = b.dataset.place;
   persist();
   closeAdd();
@@ -88,7 +95,8 @@ function openAdd(note = "") {
   $("geoNote").hidden = !note;
   $("geoNote").textContent = note;
   $("useHere").hidden = ui.geo === "denied" || ui.geo === "none";
-  $("addCancel").hidden = !state.places.length && ui.geo !== "" && ui.geo !== "wait" ? true : false;
+  // 現在地が使えず、覚えた地点もないときは、閉じても見るものがないので「やめる」を出さない
+  $("addCancel").hidden = !state.places.length && ui.geo !== "" && ui.geo !== "wait";
   if (!note) $("searchInput").focus();
 }
 function closeAdd() {
@@ -183,17 +191,14 @@ $("useHere").addEventListener("click", async () => {
 $("visitSave").addEventListener("click", () => {
   const place = addPlace(state, { ...ui.visit, emoji: "📍" });
   if (!place) return say(`地点は ${MAX_PLACES} か所までです`);
-  ui.visit = null;
+  leaveVisit();
   state.current = place.id;
   persist();
-  $("visitPanel").hidden = true;
   say(cheer(`${place.emoji} ${place.name} を覚えました`));
   show();
 });
 $("visitClose").addEventListener("click", () => {
-  ui.visit = null;
-  $("visitPanel").hidden = true;
-  history.replaceState(null, "", location.pathname);
+  leaveVisit();
   show();
 });
 
@@ -207,7 +212,13 @@ $("placeList").addEventListener("click", async (e) => {
     if (name === null || name === undefined || !cleanName(name)) return;
     p.name = cleanName(name);
     persist();
-    render();
+    // 一覧と、いま出している地点の名前・送るカードだけ描きなおす（天気は取りなおさない）
+    renderPlaceBar();
+    if (ui.shown && ui.shown.place.id === p.id) {
+      ui.shown.place = p;
+      $("nowPlace").textContent = `${p.emoji} ${p.name}`;
+      renderSend();
+    }
     return;
   }
   const remove = e.target.closest("[data-remove]");
@@ -439,8 +450,6 @@ $("sendDays").addEventListener("click", (e) => {
   ui.sendDays = b.dataset.days.split(",").map(Number);
   renderSend();
 });
-
-const deg = (v) => (v === null || v === undefined ? "—" : `${Math.round(v)}°`);
 
 function dayHtml(data, index, now, hour) {
   const rows = dayRows(data, index, now);
