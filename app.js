@@ -2,9 +2,9 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610232252";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610232252";
-import { cardParams } from "./js/card.js?v=202610232252";
+} from "./js/meteo.js?v=202610241328";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610241328";
+import { cardParams } from "./js/card.js?v=202610241328";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -25,6 +25,9 @@ const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "
 function persist() {
   if (!save(state)) say("この端末に残せませんでした（プライベートブラウズでは、閉じると消えます）");
 }
+
+// 季節の絵文字をときどき文の後ろに（Q キットの season.js。まだ読めていなければ、そのまま）
+const cheer = (text) => (window.QSeason ? window.QSeason.decorate(text) : text);
 
 function say(text, undo) {
   if (window.LineShareUI?.toast) {
@@ -164,7 +167,7 @@ $("savePlace").addEventListener("click", () => {
   state.current = place.id;
   persist();
   closeAdd();
-  say(`${place.emoji} ${place.name} を覚えました`);
+  say(cheer(`${place.emoji} ${place.name} を覚えました`));
   show();
 });
 
@@ -184,7 +187,7 @@ $("visitSave").addEventListener("click", () => {
   state.current = place.id;
   persist();
   $("visitPanel").hidden = true;
-  say(`${place.emoji} ${place.name} を覚えました`);
+  say(cheer(`${place.emoji} ${place.name} を覚えました`));
   show();
 });
 $("visitClose").addEventListener("click", () => {
