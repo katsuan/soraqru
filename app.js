@@ -2,9 +2,9 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610241428";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610241428";
-import { cardParams } from "./js/card.js?v=202610241428";
+} from "./js/meteo.js?v=202610241438";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610241438";
+import { cardParams } from "./js/card.js?v=202610241438";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -499,7 +499,7 @@ function renderLegend() {
 function tip() {
   window.LineShareUI?.firstTip?.(
     "soraqru",
-    ["色の帯は、気圧の変化の目安（青＝通常 → 黄・橙 → 赤＝警戒）", "上の丸いボタンで、実家・職場などの地点を切りかえられます", "「💬 カードで送る」で、今日・明日のまとめを渡せます"],
+    ["色の帯は、気圧の変化の目安（青＝通常 → 黄・橙 → 赤＝警戒）", "上の丸いボタンで、実家・職場などの地点を切りかえられます", "「カードで送る」で、今日・明日のまとめを渡せます"],
     $("days")
   );
 }
