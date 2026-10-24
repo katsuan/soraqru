@@ -14,7 +14,6 @@
   --ls-shadow: 0 10px 28px rgba(40, 60, 150, 0.1);
   --ls-font: "M PLUS Rounded 1c", "Hiragino Maru Gothic ProN", system-ui, sans-serif;
 
-  --line-green: #06c755;
   --sun: #ffc440;
   --past: 0.35;
 }
@@ -115,8 +114,6 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 /* 送る */
 .send-days { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .send-days .ls-chip { justify-content: center; min-height: 44px; padding: 0 6px; white-space: nowrap; }
-.ls-button.line { gap: 4px; border-color: var(--line-green); background: var(--line-green); color: #fff; }
-.ls-button.line small { font-size: 12px; opacity: 0.85; }
 
 /* 覚えた地点 */
 .place-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
