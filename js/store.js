@@ -4,7 +4,7 @@
 //   here    … 前に取れた現在地（0.01 度に丸めたもの。次に開いたとき、先に前の結果を出すため）と、その地名（name。例：名古屋市中村区。わからなければ無し。named: 2 は 100m くらいの位置で調べた印）
 //   cache   … 地点ごとの天気（{ "35.17,136.88": { at（取った時刻 ms）, data } }。1時間ほどは聞きなおさない）
 // 読まれるところ：app.js・js/link.js（テストは test/soraqru.test.mjs）
-import { cleanForecast, validLatLon } from "./meteo.js?v=202610260510";
+import { cleanForecast, validLatLon } from "./meteo.js?v=202610260600";
 
 export const KEY = "soraqru:v1";
 export const MAX_PLACES = 8;
@@ -13,6 +13,14 @@ export const MAX_CACHE = 10;
 export const FRESH_MS = 60 * 60 * 1000; // 1時間
 export const KEEP_MS = 3 * 24 * 60 * 60 * 1000; // これより古い天気は捨てる
 export const PLACE_EMOJIS = ["📍", "🏠", "🏢", "🏫", "🏡", "👵", "⛰️", "🏖️"];
+
+// しるし：候補か、カスタムで入れた絵文字1つ（はじめの1文字。英数字・記号など ASCII の字は使わない）。だめなら 📍
+export function placeMark(v) {
+  if (typeof v !== "string") return PLACE_EMOJIS[0];
+  const t = v.trim();
+  const first = globalThis.Intl?.Segmenter ? [...new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(t)][0]?.segment || "" : Array.from(t)[0] || "";
+  return first && !/[\x00-\x7f]/.test(first) ? first : PLACE_EMOJIS[0];
+}
 
 const ID = /^[a-z0-9]{1,16}$/;
 
@@ -30,7 +38,7 @@ export function cleanPlace(p) {
   const ll = validLatLon(p.lat, p.lon);
   const name = cleanName(p.name);
   if (!ll || !name || typeof p.id !== "string" || !ID.test(p.id)) return null;
-  return { id: p.id, name, emoji: PLACE_EMOJIS.includes(p.emoji) ? p.emoji : PLACE_EMOJIS[0], ...ll, src: p.src === "gps" ? "gps" : "search" };
+  return { id: p.id, name, emoji: placeMark(p.emoji), ...ll, src: p.src === "gps" ? "gps" : "search" };
 }
 
 // 天気を覚えるときの名前（"35.17,136.88"）

@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610260300">
-<link rel="stylesheet" href="style.css?v=202610260510">
+<link rel="stylesheet" href="style.css?v=202610260600">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -59,7 +59,11 @@
           <button id="emojiBtn" class="ls-pickfield-btn" type="button" aria-controls="emojiPick"><span id="emojiNow">📍</span></button>
           <input id="placeName" maxlength="12" placeholder="例：実家・職場" autocomplete="off" enterkeyhint="done" aria-labelledby="placeNameLabel">
         </div>
-        <div id="emojiPick" class="ls-picker" role="radiogroup" aria-label="しるし" style="--cols: 8" hidden></div>
+        <div id="emojiPick" class="ls-picker" role="radiogroup" aria-label="しるし" style="--cols: 10" hidden>
+          <div id="emojiItems" class="emoji-items"></div>
+          <!-- カスタム：好きな絵文字1つ -->
+          <input id="emojiCustom" class="ls-picker-custom" maxlength="8" placeholder="✏️" autocomplete="off" enterkeyhint="done" aria-label="カスタムのしるし（好きな絵文字を1つ）">
+        </div>
       </div>
       <button id="savePlace" class="ls-button is-primary is-block" type="button">＋ 地点を覚える</button>
     </div>
@@ -162,7 +166,7 @@
 <script src="https://katsuan.github.io/line-share/shared/qlove-bot.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
-<script type="module" src="app.js?v=202610260510"></script>
+<script type="module" src="app.js?v=202610260600"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="soraqru" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

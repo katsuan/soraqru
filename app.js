@@ -3,12 +3,12 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf, daysFromToday, FORECAST_MAX_DAYS
-} from "./js/meteo.js?v=202610260510";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610260510";
-import { cardParams, dayCard } from "./js/card.js?v=202610260510";
-import { readVisit } from "./js/link.js?v=202610260510";
-import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610260510";
-import { fineLatLon, placeName } from "./js/place-name.js?v=202610260510";
+} from "./js/meteo.js?v=202610260600";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, placeMark, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610260600";
+import { cardParams, dayCard } from "./js/card.js?v=202610260600";
+import { readVisit } from "./js/link.js?v=202610260600";
+import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610260600";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202610260600";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -112,11 +112,26 @@ $("addCancel").addEventListener("click", closeAdd);
 const emojiPick = window.LineShareUI?.pickField?.({ field: $("placeField"), button: $("emojiBtn"), input: $("placeName"), picker: $("emojiPick") }) || null;
 // Q キットが古い・読めないときは、押して開く・たたむだけ
 if (!emojiPick) $("emojiBtn").addEventListener("click", () => ($("emojiPick").hidden = !$("emojiPick").hidden));
+// カスタム：入れた絵文字の1つめを、しるしにする（英数字などは使わない）。押しただけでも、前に入れたものを選ぶ
+$("emojiCustom").addEventListener("input", () => {
+  const v = $("emojiCustom").value.trim();
+  if (!v || placeMark(v) === PLACE_EMOJIS[0] && !v.startsWith(PLACE_EMOJIS[0])) return;
+  ui.emoji = placeMark(v);
+  renderEmojiPick();
+});
+$("emojiCustom").addEventListener("focus", () => {
+  const v = $("emojiCustom").value.trim();
+  if (v) {
+    ui.emoji = placeMark(v);
+    renderEmojiPick();
+  }
+});
 // 地点のしるしの候補と、いまのしるしを描く
 function renderEmojiPick() {
   $("emojiNow").textContent = ui.emoji;
   $("emojiBtn").setAttribute("aria-label", `しるしを選ぶ（いま：${ui.emoji}）`);
-  $("emojiPick").innerHTML = PLACE_EMOJIS.map(
+  $("emojiCustom").classList.toggle("is-selected", !PLACE_EMOJIS.includes(ui.emoji));
+  $("emojiItems").innerHTML = PLACE_EMOJIS.map(
     (e) => `<button class="ls-picker-item" type="button" role="radio" aria-checked="${e === ui.emoji}" data-emoji="${e}" aria-label="${e}">${e}</button>`
   ).join("");
 }
@@ -124,6 +139,7 @@ $("emojiPick").addEventListener("click", (e) => {
   const b = e.target.closest("[data-emoji]");
   if (!b) return;
   ui.emoji = b.dataset.emoji;
+  $("emojiCustom").value = "";
   renderEmojiPick();
   // 選んだらたたむ（呼び名を入れているあいだは開いたまま）
   if (document.activeElement !== $("placeName")) emojiPick ? emojiPick.close() : ($("emojiPick").hidden = true);

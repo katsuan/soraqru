@@ -195,7 +195,7 @@ test("端末の中身：形のちがう地点は捨て、名前は長さに上�
   assert.deepEqual(s.places.map((p) => p.id), ["a1", "b2"]);
   assert.deepEqual(s.places[0], { id: "a1", name: "実家", emoji: "🏠", lat: 35.17, lon: 136.88, src: "gps" });
   assert.equal([...s.places[1].name].length, S.MAX_NAME);
-  assert.equal(s.places[1].emoji, "📍");
+  assert.equal(s.places[1].emoji, "💣"); // カスタムの絵文字はそのまま
   assert.equal(s.places[1].src, "search");
   assert.equal(s.current, "here");
   assert.deepEqual(s.here, { lat: 35.12, lon: 136.9 });
@@ -461,4 +461,14 @@ test("カードのボタンのリンク：地名で探した地点だけ場所�
   const url = L.openUrl({ name: "名古屋 駅", lat: 35.17, lon: 136.88, src: "search" });
   assert.doesNotMatch(url, /\+/);
   assert.equal(L.readVisit(new URL(url).search).name, "名古屋 駅");
+});
+
+test("地点のしるし：カスタムの絵文字は1つだけ。英数字・記号（HTML など）は 📍 にもどす", async () => {
+  const S = await import("../js/store.js");
+  assert.equal(S.placeMark("🐶🐱"), "🐶");
+  assert.equal(S.placeMark(" 🏔️ "), "🏔️");
+  assert.equal(S.placeMark("<b>"), "📍");
+  assert.equal(S.placeMark("a"), "📍");
+  assert.equal(S.placeMark(""), "📍");
+  assert.equal(S.placeMark(null), "📍");
 });

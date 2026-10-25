@@ -162,3 +162,6 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .cell.is-target { outline: 3px solid var(--ls-accent); outline-offset: 1px; z-index: 1; }
 .hour.is-target { box-shadow: inset 0 0 0 3px var(--ls-accent); background: var(--ls-accent-soft); }
 .hour.is-target .h { color: var(--ls-accent-ink); }
+
+/* しるしの選択肢（Q キットの ls-picker の中）：候補8つとカスタム（2つぶん）を1行に */
+.emoji-items { display: contents; }
