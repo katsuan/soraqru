@@ -2,10 +2,10 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610251001";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251001";
-import { cardParams } from "./js/card.js?v=202610251001";
-import { placeName } from "./js/place-name.js?v=202610251001";
+} from "./js/meteo.js?v=202610250934";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610250934";
+import { cardParams } from "./js/card.js?v=202610250934";
+import { placeName } from "./js/place-name.js?v=202610250934";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -539,6 +539,9 @@ function refresh() {
   if (!hit || !hit.fresh) return show();
   render(s.place, hit.data, hit.at, "");
 }
+
+// 天気の知らせボットの案内は、確かめがすむまで ?preview=notify のときだけ出す
+if (new URLSearchParams(location.search).get("preview") === "notify") $("notifyFold").hidden = false;
 
 renderLegend();
 renderEmojiPick();

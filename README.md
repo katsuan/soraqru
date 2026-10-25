@@ -53,8 +53,33 @@
 | `js/card.js` | おくるんのお知らせカードに渡す中身 |
 | `test/` | `npm test`（`node --test test/`）。気圧の段階・返事の読みこみ（壊れた・欠けた返事）・端末の中身・カード（おくるんの組み立てをそのまま動かし、`q-oqrn/tools/qtest/fake-gas.js` の `checkMessages` で LINE が受けつける形かを見る） |
 | `tools/icon.py` | アイコン・ロゴ・OGP |
+| `gas/` | 天気の知らせボット（配布用シートの GAS）。`0_setup.gs` が GAS エディタで動かす関数 |
+| `docs/notify-setup.html` | 天気の知らせボットのつなぎ方（noindex） |
+| `tools/richmenu.py`・`tools/publish-dist.sh` | ボットのメニューの画像・配布用シートに送る |
 
 確かめ方：`npm test` と `node ../q-oqrn/tools/qtest/check-code.mjs .`
+
+## 天気の知らせボット（gas/。確かめ中）
+
+雨・気圧の変化・気温の大きな変わり目がある日だけ、決めた時間に LINE で知らせるボット。配布用シートをコピーすると、だれでも自分の LINE 公式アカウントで持てる。中身は KazoQ の「場所の天気の知らせ」（`q-kazoq/01_43_WEATHER_NOTICE.js`）から、KazoQ の家族・管理者の決まりを外したもの。
+
+- 手順書：[`docs/notify-setup.html`](docs/notify-setup.html)（noindex）。そらくるの画面のたたみ欄「🔔 天気の知らせを LINE で受けとる（くわしい人向け）」から開く。確かめがすむまで、たたみ欄は `?preview=notify` で開いたときだけ出す
+- 知らせること：☔ 6〜21時に降水確率 60% 以上・🌀 3時間の変化が「注意」「警戒」（そらくると同じ目安。`gas/3_weather.gs` に写し、`test/bot.test.mjs` で `js/meteo.js` と同じ答えかを確かめる）・🌡️ 最高気温が前の日より 5℃ 以上。何もない日は送らない
+- 時間：6・7・8時（その日のぶん）・21時（明日のぶん）。1時間おきのトリガー（`hourlyWeatherNotice`）で、決めた時間の地点だけ見る。同じ地点は1回の実行で1回だけ聞き、Open-Meteo に断られた（429）ら1回だけやりなおす。だめなら送らずに「動作の記録」へ。今月の push が上限の8割をこえたら送らない
+- 役割：システム管理者＝シートをコピーした人（GAS エディタで `0_setup.gs` の関数を動かす・鍵を入れる）、ツール管理者＝持ち主（LINE で「🔑 持ち主の登録」→ 10分以内に `adoptOwner`）、ユーザー＝持ち主が許した人（「🙋 使いたいと伝える」→ 持ち主にクイックリプライの「✅ 許す」）。許していない人には送らない
+- 打ちこまなくてよい：一覧・地点を足す・時間・やめる・使う人は、カードのボタン（聞き返すだけ）・クイックリプライ・トークの下のメニュー（`setupRichMenu`。画像は `gas/richmenu.png`、`tools/richmenu.py` で作る）から
+- 持ち主の `#テスト`（ux.md の H11）：知らせ・一覧の見本、自己点検（`qCheckAll`）、カードが断られたときの文、季節の絵文字の出る／出ない。すべて 🧪 付き・reply だけ・シートに書かない
+- Webhook の URL は `…/exec?key=WEBHOOK_KEY`（GAS は LINE の署名を読めないため）。合言葉が合わない呼び出しは何もしない
+- シート：「地点」（noticeId・ownerUserId・送り先・地名・0.01 度に丸めた位置・時間）・「使う人」（userId・名前・allowed／requested／denied／removed）・「動作の記録」（LINE の ID は書かない・500 行まで）。外から来た文字は `safeCell` を通して書く
+- スクリプト プロパティ：`LINE_CHANNEL_ACCESS_TOKEN`（持ち主が入れる）・`WEBHOOK_KEY`（`setupBot` が作る）・`OWNER_USER_ID`（`adoptOwner` が入れる）。配布用シートでは空
+- 置き場所をそらくるのリポジトリにしたわけ：気圧の目安を `js/meteo.js` と同じテストで確かめられる、メニューの画像・手順書を同じ GitHub Pages から出せる、そらくるといっしょに直せる
+
+### 配布用シートを作る・新しい版を送る
+
+1. Google スプレッドシートを新しく作り（名前は「そらくる 天気の知らせ（配布用）」）、「拡張機能」→「Apps Script」→「プロジェクトの設定」のスクリプト ID を `gas/.clasp.json`（`gas/.clasp.json.example` を写す。git に入れない）に入れる
+2. `tools/publish-dist.sh`（テストが通り、コミットずみのときだけ送る）
+3. シートの「共有」→「リンクを知っている全員」が「閲覧者」。コピーのリンク（`…/copy`）を `docs/notify-setup.html` の `COPY_URL` に入れる
+4. スクリプト プロパティは空のまま（鍵が渡らないように）。シートの「地点」「使う人」「動作の記録」も空のまま
 
 ## アイコン・ロゴ・OGP
 

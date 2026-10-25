@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610251000">
-<link rel="stylesheet" href="style.css?v=202610251001">
+<link rel="stylesheet" href="style.css?v=202610250934">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -111,6 +111,15 @@
       </div>
     </details>
 
+    <!-- 天気の知らせボット（確かめがすむまで出さない。?preview=notify で開いたときだけ app.js が出す） -->
+    <details class="ls-fold" id="notifyFold" hidden>
+      <summary><span class="ls-fold-icon" aria-hidden="true">🔔</span>天気の知らせを LINE で受けとる（くわしい人向け）</summary>
+      <div class="ls-fold-body">
+        <p class="ls-hint">雨・気圧の変化・気温の大きな変わり目がある日だけ、決めた時間に知らせるボットを、自分で持てます。配布用のシートをコピーして、自分の公式アカウントとつなぎます（30分くらい・無料）。</p>
+        <a class="ls-button is-block" href="docs/notify-setup.html" target="_blank" rel="noopener">📘 つなぎ方を見る</a>
+      </div>
+    </details>
+
     <details class="ls-fold" id="placesFold">
       <summary><span class="ls-fold-icon" aria-hidden="true">🔒</span>覚えた地点<span id="placesMeta" class="ls-fold-meta"></span></summary>
       <div class="ls-fold-body">
@@ -128,7 +137,7 @@
 
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js" defer></script>
-<script type="module" src="app.js?v=202610251001"></script>
+<script type="module" src="app.js?v=202610250934"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="soraqru" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>
