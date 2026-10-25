@@ -1,14 +1,16 @@
 // そらくる（SoraQru）：画面の操作。天気は Open-Meteo だけ（js/meteo.js）、地点と結果はこの端末の中だけ（js/store.js）
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
-  validLatLon, weatherOf
-} from "./js/meteo.js?v=202610251048";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251048";
-import { cardParams, dayCard } from "./js/card.js?v=202610251048";
-import { fineLatLon, placeName } from "./js/place-name.js?v=202610251048";
+  validLatLon, weatherOf, parseTarget, daysFromToday, FORECAST_MAX_DAYS
+} from "./js/meteo.js?v=202610251057";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251057";
+import { cardParams, dayCard } from "./js/card.js?v=202610251057";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202610251057";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
+// 開いたツールの名前（?from=）。知らない名前は使わない（ui を作るときに readVisit が読むので、ここに置く）
+const FROM_TOOLS = { yuqsaki: "ゆくさき", saqsen: "さくせん盤", qlovebot: "くらぶボット", kazoq: "KazoQ" };
 
 let state = load();
 const ui = {
@@ -40,12 +42,19 @@ function say(text, undo) {
 }
 
 // ?at=35.17,136.88&name=名古屋（送ってもらったカードのボタン）。形を確かめて読む
+// ほかのツール（ゆくさき・さくせん盤など）からは、場所の名前でも開ける（?q=那覇&date=2026-11-01&hour=13）。
+// date・hour は「見たい日」（target）。今日・明日ならその札に印、それより先（16日先まで）はその日の天気を一番上に
 function readVisit() {
   const q = new URLSearchParams(location.search);
+  const target = parseTarget(q.get("date"), q.get("hour"));
   const at = String(q.get("at") || "").split(",");
   const ll = at.length === 2 ? validLatLon(at[0], at[1]) : null;
-  if (!ll) return null;
-  return { id: "visit", name: cleanName(q.get("name")) || "送ってもらった地点", emoji: "📍", ...ll, src: "search" };
+  const name = cleanName(q.get("name"));
+  const from = Object.prototype.hasOwnProperty.call(FROM_TOOLS, q.get("from")) ? FROM_TOOLS[q.get("from")] : "";
+  if (ll) return { id: "visit", name: name || "送ってもらった地点", emoji: "📍", ...ll, src: "search", target, from };
+  const query = cleanName(q.get("q"), 40);
+  if (query) return { id: "visit", name: name || cleanName(query), emoji: "📍", query, lat: null, lon: null, src: "search", target, from };
+  return null;
 }
 
 // いま見ている地点（visit・現在地・覚えた地点）。現在地は { id: "here" }
@@ -305,7 +314,25 @@ async function show() {
   const seq = ++ui.seq;
   renderPlaceBar();
   $("visitPanel").hidden = !ui.visit;
-  if (ui.visit) $("visitName").textContent = ui.visit.name;
+  if (ui.visit) {
+    const t = ui.visit.target;
+    $("visitFrom").textContent = ui.visit.from ? `${ui.visit.from}で開いた` : "送ってもらった";
+    $("visitName").textContent = ui.visit.name;
+    $("visitWhen").textContent = t ? `の ${dayLabel(t.date)}${t.hour === null ? "" : ` ${t.hour}時ごろ`}の天気` : "";
+  }
+  // 場所の名前で開いたときは、先に探す（いちばんそれらしいもの。日本を先・人の多い順）
+  if (ui.visit && ui.visit.query && ui.visit.lat === null) {
+    renderWaiting("場所をさがしています");
+    try {
+      const list = parseGeocode(...(await Promise.all(geocodeUrls(ui.visit.query).map((url) => getJson(url)))));
+      if (seq !== ui.seq) return;
+      if (!list.length) return renderEmpty("🔎", `「${ui.visit.query}」の場所が見つかりませんでした。上の「＋ 地点」から探してね。`);
+      Object.assign(ui.visit, { lat: list[0].lat, lon: list[0].lon });
+    } catch {
+      if (seq !== ui.seq) return;
+      return renderEmpty("📡", "場所を探せませんでした。つながったら「もう一度」を押してね。", true);
+    }
+  }
   let place = currentPlace();
   $("nowPlace").textContent = `${place.emoji} ${place.name}`;
 
@@ -415,7 +442,7 @@ function renderEmpty(icon, text, retry = false) {
 function render(place, data, at, note) {
   stopProgress();
   if (place.id === "here") place = currentPlace(); // あとからわかった地名（名古屋市中村区など）を使う
-  ui.shown = { place, data, at };
+  ui.shown = { place, data, at, note };
   const now = new Date();
   const hour = localHour(now, data.offset);
   const today = dayRows(data, 0, now);
@@ -451,13 +478,22 @@ function render(place, data, at, note) {
         <span class="trend">${later ? `3時間後 ${esc(trend)}` : ""}</span>
       </div>`;
   }
-  $("days").innerHTML = [0, 1].map((i) => dayHtml(data, i, now, hour)).join("");
-  // 今日の1時間ごとは、いまの時刻から見えるように
-  const nowCell = $("days").querySelector(".hours .is-now");
-  if (nowCell) nowCell.parentElement.scrollLeft = Math.max(0, nowCell.offsetLeft - 8);
+  // 見たい日（ほかのツールから）：今日・明日ならその札に印。それより先は、その日の札を一番上に（読みこむまでは案内）
+  const t = targetOf(place);
+  const n = t ? daysFromToday(t.date, now, data.offset) : null;
+  const ext = t && ui.extended && ui.extended.key === targetKey(place, t) ? ui.extended.data : null;
+  const top = t && (n < 0 || n > 1) ? (ext ? dayHtml(ext, n, now, hour, t) : targetNoteHtml(t, n)) : "";
+  $("days").innerHTML = top + [0, 1].map((i) => dayHtml(data, i, now, hour, t && n === i ? t : null)).join("");
+  // 1時間ごとは、見たい時刻（なければ、今日のいまの時刻）から見えるように
+  $("days").querySelectorAll(".hours").forEach((list) => {
+    const cell = list.querySelector(".is-target") || list.querySelector(".is-now");
+    if (cell) list.scrollLeft = Math.max(0, cell.offsetLeft - 8);
+  });
+  if (t && n > 1 && n < FORECAST_MAX_DAYS && !ext) loadTargetDay(place, t);
 
   $("sendPanel").hidden = false;
   renderSend();
+  if (typeof renderNotifyBtn === "function") renderNotifyBtn();
 }
 
 // ---- カードで送る：送る日（今日・明日）を、カードの見本つきの札で選ぶシート ----
@@ -530,12 +566,47 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !sendSheet.hidden) closeSend();
 });
 
-function dayHtml(data, index, now, hour) {
+// ---- 見たい日（ほかのツールから開いたとき） ----
+const targetOf = (place) => (place && place.id === "visit" && ui.visit ? ui.visit.target : null);
+const targetKey = (place, t) => `${place.lat},${place.lon},${t.date}`;
+
+// 明日より先の日：16日ぶんの予報を聞く（端末には覚えない。開いているあいだだけ）
+async function loadTargetDay(place, t) {
+  const key = targetKey(place, t);
+  if (ui.extending === key) return;
+  ui.extending = key;
+  try {
+    const data = parseForecast(await getJson(forecastUrl(place.lat, place.lon, FORECAST_MAX_DAYS)), new Date(), 24 * FORECAST_MAX_DAYS);
+    if (!data) return;
+    ui.extended = { key, data };
+    const s = ui.shown;
+    if (s && s.place.id === "visit" && targetKey(s.place, t) === key) render(s.place, s.data, s.at, s.note);
+  } catch {
+    // 読めないときは、案内のまま
+  } finally {
+    ui.extending = "";
+  }
+}
+
+function targetNoteHtml(t, n) {
+  const when = `${dayLabel(t.date)}${t.hour === null ? "" : ` ${t.hour}時ごろ`}`;
+  const text = n < 0
+    ? `${when}は、もう過ぎています。`
+    : n >= FORECAST_MAX_DAYS
+      ? `${when}の天気は、${FORECAST_MAX_DAYS}日前ごろから見られます。近くなったら、もう一度開いてね。`
+      : `${when}の天気を読みこんでいます…`;
+  return `<section class="ls-panel day target-day"><h2 class="day-title">📅 予定の日 <small>${esc(dayLabel(t.date))}</small></h2><p class="ls-hint">${esc(text)}</p></section>`;
+}
+
+function dayHtml(data, index, now, hour, target = null) {
   const rows = dayRows(data, index, now);
   const key = addDays(localYmd(now, data.offset), index);
   const info = dayInfo(data, index, now);
+  const title = index === 0 ? "今日" : index === 1 ? "明日" : "📅 予定の日";
+  const th = target ? target.hour : null;
+  const badge = !target ? "" : index > 1 ? (th === null ? "" : `<span class="target-badge">${th}時ごろ</span>`) : `<span class="target-badge">📅 予定${th === null ? "" : `・${th}時`}</span>`;
   if (!rows.length) {
-    return `<section class="ls-panel day"><h2 class="day-title">${index ? "明日" : "今日"} <small>${esc(dayLabel(key))}</small></h2><p class="ls-hint">この日の情報がまだありません。</p></section>`;
+    return `<section class="ls-panel day"><h2 class="day-title">${title} <small>${esc(dayLabel(key))}</small>${badge}</h2><p class="ls-hint">この日の情報がまだありません。</p></section>`;
   }
   const w = weatherOf(info?.code, 1);
   const summary = daySummary(rows, 4, "1日を通して 通常", "\n") || "気圧の情報がありません";
@@ -546,20 +617,20 @@ function dayHtml(data, index, now, hour) {
     const past = index === 0 && h < hour;
     const nowMark = index === 0 && h === hour;
     const title = `${h}時 ${lv ? lv.label : "—"}${r && r.change !== null ? `（3時間で ${r.change > 0 ? "+" : ""}${r.change.toFixed(1)} hPa）` : ""}`;
-    return `<span class="cell${past ? " is-past" : ""}${nowMark ? " is-now" : ""}" style="--c:${lv ? lv.color : "transparent"}" title="${esc(title)}"></span>`;
+    return `<span class="cell${past ? " is-past" : ""}${nowMark ? " is-now" : ""}${th === h ? " is-target" : ""}" style="--c:${lv ? lv.color : "transparent"}" title="${esc(title)}"></span>`;
   }).join("");
   const hours = rows
     .map((r) => {
       const ww = weatherOf(r.code, r.day);
       const lv = r.level === null ? null : LEVELS[r.level];
-      const cls = index === 0 && r.hour < hour ? " is-past" : index === 0 && r.hour === hour ? " is-now" : "";
+      const cls = (index === 0 && r.hour < hour ? " is-past" : index === 0 && r.hour === hour ? " is-now" : "") + (th === r.hour ? " is-target" : "");
       return `<li class="hour${cls}"><span class="h">${index === 0 && r.hour === hour ? "いま" : `${r.hour}時`}</span><span class="e" aria-hidden="true">${esc(ww.emoji)}</span><span class="t">${r.temp === null ? "—" : esc(Math.round(r.temp))}°</span><span class="p" style="--c:${lv ? lv.color : "transparent"}">${r.pop === null ? "" : `${esc(r.pop)}%`}</span><span class="sr">${esc(ww.label)}・気圧 ${lv ? esc(lv.label) : "—"}</span></li>`;
     })
     .join("");
   return `
-  <section class="ls-panel day" aria-label="${index ? "明日" : "今日"}">
+  <section class="ls-panel day${index > 1 ? " target-day" : ""}" aria-label="${title}">
     <div class="day-head">
-      <h2 class="day-title">${index ? "明日" : "今日"} <small>${esc(dayLabel(key))}</small></h2>
+      <h2 class="day-title">${title} <small>${esc(dayLabel(key))}</small>${badge}</h2>
       <p class="day-weather"><span aria-hidden="true">${esc(w.emoji)}</span> <span class="ls-nowrap">${esc(w.label)}</span> <b class="max">${esc(deg(info?.max))}</b>/<b class="min">${esc(deg(info?.min))}</b>${info?.pop === null || info?.pop === undefined ? "" : ` <span class="pop">☔${esc(Math.round(info.pop))}%</span>`}</p>
     </div>
     <p class="band-label">気圧の変化の目安</p>
@@ -605,7 +676,52 @@ function refresh() {
 }
 
 // 天気の知らせボットの案内は、確かめがすむまで ?preview=notify のときだけ出す
-if (new URLSearchParams(location.search).get("preview") === "notify") $("notifyFold").hidden = false;
+// ---- くらぶボット（確かめ中）：たたみ欄は ?preview=notify か、もうつないでいる人だけに出す ----
+const botLink = window.QloveBotLink || null;
+const bot = { line: "" }; // ボットの LINE の ID（@…。ping で聞く。端末には残さない）
+if (botLink && (new URLSearchParams(location.search).get("preview") === "notify" || botLink.get())) $("notifyFold").hidden = false;
+
+async function pingBot(url) {
+  const res = await botLink.ping(url);
+  bot.line = res.ok && typeof res.line === "string" && /^@[0-9a-z._-]{2,40}$/i.test(res.line) ? res.line : "";
+  return res;
+}
+
+function renderBot(statusText) {
+  if (!botLink) return;
+  const url = botLink.get();
+  $("botUrl").value = url;
+  $("botClear").hidden = !url;
+  if (statusText !== undefined) $("botStatus").textContent = statusText;
+  renderNotifyBtn();
+}
+
+// 見ている地点を足す文を入れて、ボットのトークを開く（送るのは本人。ボットは送った人の役割で決める）
+function renderNotifyBtn() {
+  const s = ui.shown;
+  const btn = $("notifyBtn");
+  btn.hidden = !(botLink && botLink.get() && bot.line && s && Number.isFinite(s.place.lat));
+  if (btn.hidden) return;
+  const text = `📍 地点を足す ${s.place.lat.toFixed(2)},${s.place.lon.toFixed(2)} ${cleanName(s.place.name === "現在地" ? "" : s.place.name)}`.trim();
+  btn.href = `https://line.me/R/oaMessage/${encodeURIComponent(bot.line)}/?${encodeURIComponent(text)}`;
+}
+
+if (botLink) {
+  $("botSave").addEventListener("click", async () => {
+    const saved = botLink.set($("botUrl").value);
+    if (!saved.ok) return renderBot(saved.error === "url" ? "GAS の …/exec の URL を入れてね（?key= のない ② の URL）" : "この端末に残せませんでした");
+    renderBot("確かめています…");
+    const res = await pingBot(saved.url);
+    renderBot(res.ok ? `✅ ${res.bot}（版 ${res.version}）とつなぎました` : "つながりませんでした。URL と、ボットのデプロイ（アクセスできるユーザー：全員）を確かめてね");
+  });
+  $("botClear").addEventListener("click", () => {
+    botLink.clear();
+    bot.line = "";
+    renderBot("つなぐのをやめました");
+  });
+  if (botLink.get()) pingBot().then((res) => renderBot(res.ok ? `✅ ${res.bot}（版 ${res.version}）とつないでいます` : "いまは、くらぶボットにつながりません"));
+  renderBot();
+}
 
 renderLegend();
 renderEmojiPick();

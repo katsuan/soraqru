@@ -407,3 +407,24 @@ test("現在地の地名を覚えて読みなおせる（おかしな名前は�
   storage.setItem(S.KEY, JSON.stringify({ places: [], current: "here", here: { lat: 35.17, lon: 136.88, name: 5, named: 2 }, cache: {} }));
   assert.deepStrictEqual(S.load(storage).here, { lat: 35.17, lon: 136.88 });
 });
+
+test("見たい日（ほかのツールから ?date=&hour=）：形を確かめて読む。今日から何日あとか", () => {
+  assert.deepEqual(M.parseTarget("2026-11-01", "13"), { date: "2026-11-01", hour: 13 });
+  assert.deepEqual(M.parseTarget(" 2026-11-01 ", ""), { date: "2026-11-01", hour: null });
+  for (const bad of ["", null, "2026-02-30", "2026/11/01", "20261101", "<b>"]) assert.equal(M.parseTarget(bad, "1"), null, String(bad));
+  assert.equal(M.parseTarget("2026-11-01", "24").hour, null);
+  assert.equal(M.parseTarget("2026-11-01", "x").hour, null);
+  // 日本の 10/23 10:30 から
+  assert.equal(M.daysFromToday("2026-10-23", NOW, 32400), 0);
+  assert.equal(M.daysFromToday("2026-10-28", NOW, 32400), 5);
+  assert.equal(M.daysFromToday("2026-10-22", NOW, 32400), -1);
+});
+
+test("明日より先の日は、16日ぶん聞いて読む（ふだんは3日ぶん）", () => {
+  assert.equal(new URL(M.forecastUrl(35, 136)).searchParams.get("forecast_days"), "3");
+  assert.equal(new URL(M.forecastUrl(35, 136, 16)).searchParams.get("forecast_days"), "16");
+  assert.equal(new URL(M.forecastUrl(35, 136, 99)).searchParams.get("forecast_days"), "16");
+  const json = sample();
+  assert.equal(M.parseForecast(json, NOW).hours.length, 72);
+  assert.equal(M.parseForecast(json, NOW, 24).hours.length, 24);
+});

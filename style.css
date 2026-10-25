@@ -157,3 +157,10 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 /* 「通/常」「くも/り」のように、短い言葉の途中で折り返さない（天気の名前は ls-nowrap で包む） */
 .level-pill, .legend li, .ls-nowrap { white-space: nowrap; }
 .ls-fold[hidden] { display: none; }
+
+/* 見たい日（ほかのツールから開いたとき）：予定の日の札・時刻の印 */
+.target-day { border: 2px solid var(--ls-accent); }
+.target-badge { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--ls-accent-soft); color: var(--ls-accent-ink); font-size: 12px; font-weight: 800; vertical-align: 2px; white-space: nowrap; }
+.cell.is-target { outline: 3px solid var(--ls-accent); outline-offset: 1px; z-index: 1; }
+.hour.is-target { box-shadow: inset 0 0 0 3px var(--ls-accent); background: var(--ls-accent-soft); }
+.hour.is-target .h { color: var(--ls-accent-ink); }

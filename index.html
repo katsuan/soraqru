@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610251000">
-<link rel="stylesheet" href="style.css?v=202610251048">
+<link rel="stylesheet" href="style.css?v=202610251057">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -66,7 +66,7 @@
 
   <!-- 受けとったリンクの地点（覚えるまで、この中だけ） -->
   <section id="visitPanel" class="ls-panel visit" hidden>
-    <p class="visit-text">送ってもらった「<b id="visitName"></b>」を見ています</p>
+    <p class="visit-text"><span id="visitFrom">送ってもらった</span>「<b id="visitName"></b>」<span id="visitWhen"></span>を見ています</p>
     <div class="form-actions">
       <button id="visitSave" class="ls-button is-primary is-block" type="button">＋ この地点を覚える</button>
       <button id="visitClose" class="ls-button is-block" type="button">閉じる</button>
@@ -84,6 +84,8 @@
     </div>
     <p id="nowNote" class="ls-hint now-note" hidden></p>
     <button id="retry" class="ls-button is-block" type="button" hidden>🔄 もう一度</button>
+    <!-- くらぶボットとつないだ人だけ：この地点を、ボットの天気の知らせに足す（ボットのトークに文を入れて開く） -->
+    <a id="notifyBtn" class="ls-button is-block" href="#" hidden>🔔 この地点を、くらぶボットの知らせに足す</a>
   </section>
 
   <!-- 今日・明日 -->
@@ -112,6 +114,14 @@
       <div class="ls-fold-body">
         <p class="ls-hint">雨・気圧の変化・気温の大きな変わり目がある日だけ、決めた時間に知らせるボットを、自分で持てます。くらぶのツール共通の「くらぶボット」の、☁️ 天気の機能です。配布用のシートをコピーして、自分の公式アカウントとつなぎます（30分くらい・無料）。</p>
         <a class="ls-button is-block" href="https://katsuan.github.io/qlove-bot/docs/setup.html" target="_blank" rel="noopener">📘 つなぎ方を見る</a>
+        <p class="sub-title">⚙️ くらぶボットとつなぐ</p>
+        <p class="ls-hint">ボットの GAS エディタで showWebhookUrl を実行したときの、② の URL（合言葉なし）を入れます。くらぶのほかのツールも、同じ URL を読みます（LINE の中とブラウザは、それぞれで入れます）。</p>
+        <div class="search-row">
+          <input id="botUrl" class="ls-input" type="url" inputmode="url" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off" enterkeyhint="done" aria-label="くらぶボットの URL">
+          <button id="botSave" class="ls-button is-primary" type="button">つなぐ</button>
+        </div>
+        <p id="botStatus" class="ls-hint" role="status"></p>
+        <button id="botClear" class="link" type="button" hidden>つなぐのをやめる</button>
       </div>
     </details>
 
@@ -144,9 +154,10 @@
   </div>
 </div>
 
+<script src="https://katsuan.github.io/line-share/shared/qlove-bot.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js" defer></script>
-<script type="module" src="app.js?v=202610251048"></script>
+<script type="module" src="app.js?v=202610251057"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="soraqru" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

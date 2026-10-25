@@ -40,7 +40,10 @@ export function validLatLon(lat, lon) {
   return a !== null && b !== null && Math.abs(a) <= 90 && Math.abs(b) <= 180 ? { lat: roundCoord(a), lon: roundCoord(b) } : null;
 }
 
-export function forecastUrl(lat, lon) {
+// 予報は16日先まで（Open-Meteo）。旅や試合の日など、明日より先の日を見るときだけ長く聞く
+export const FORECAST_MAX_DAYS = 16;
+
+export function forecastUrl(lat, lon, days = 3) {
   const q = new URLSearchParams({
     latitude: roundCoord(lat).toFixed(2),
     longitude: roundCoord(lon).toFixed(2),
@@ -49,7 +52,7 @@ export function forecastUrl(lat, lon) {
     timezone: "auto",
     // 0時の「3時間の変わり方」に前の日の夜が要る
     past_days: "1",
-    forecast_days: "3"
+    forecast_days: String(Math.min(Math.max(Math.round(Number(days)) || 3, 1), FORECAST_MAX_DAYS))
   });
   return `${FORECAST_API}?${q}`;
 }
@@ -59,7 +62,7 @@ export function forecastUrl(lat, lon) {
  *   { offset（その地点の UTC からのずれ・秒）, hours: [{ t, hpa, temp, code, pop, day, level, change }], days: [{ date, code, max, min, pop }] }
  * hours は今日の0時から 72 時間まで。level は3時間前（時刻で探す）とくらべた段階（どちらかの気圧がない時間は null）
  */
-export function parseForecast(json, now = new Date()) {
+export function parseForecast(json, now = new Date(), maxHours = HOURS_KEEP) {
   if (!json || typeof json !== "object") return null;
   const h = json.hourly;
   if (!h || typeof h !== "object" || !Array.isArray(h.time) || !Array.isArray(h.pressure_msl)) return null;
@@ -70,7 +73,7 @@ export function parseForecast(json, now = new Date()) {
   const hpaAt = new Map(h.time.map((t, i) => [t, finite(h.pressure_msl[i])]));
   const hours = [];
   h.time.forEach((t, i) => {
-    if (typeof t !== "string" || !TIME.test(t) || t.slice(0, 10) < today || hours.length >= HOURS_KEEP) return;
+    if (typeof t !== "string" || !TIME.test(t) || t.slice(0, 10) < today || hours.length >= maxHours) return;
     const hpa = hpaAt.get(t) ?? null;
     const before = hpaAt.get(shiftHours(t, -3)) ?? null;
     const change = hpa !== null && before !== null ? round1(hpa - before) : null;
@@ -263,4 +266,23 @@ export function geocodeUrls(text) {
   if (!name) return [];
   const names = /[市区町村都道府県]$/.test(name) || !/[぀-ヿ一-鿿]/.test(name) ? [name] : [name, `${name}市`];
   return names.map((n) => `${GEOCODE_API}?${new URLSearchParams({ name: n, count: "8", language: "ja", format: "json" })}`);
+}
+
+/**
+ * ほかのツールから開いたときの「見たい日」（?date=2026-11-01&hour=13）。形を確かめて読む。
+ * { date: "YYYY-MM-DD", hour: 0〜23 か null }。ない・おかしいときは null
+ */
+export function parseTarget(dateText, hourText) {
+  const date = String(dateText || "").trim();
+  if (!DATE.test(date)) return null;
+  const d = new Date(`${date}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== date) return null; // 2月30日などは読まない
+  const h = String(hourText ?? "").trim();
+  const hour = /^\d{1,2}$/.test(h) && Number(h) <= 23 ? Number(h) : null;
+  return { date, hour };
+}
+
+/** その日が今日から何日あとか（その地点の日付で）。今日＝0 */
+export function daysFromToday(date, now, offset) {
+  return Math.round((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${localYmd(now, offset)}T00:00:00Z`)) / 864e5);
 }
