@@ -363,27 +363,47 @@ test("地名：市区町村のコードを名前にする", () => {
   assert.strictEqual(P.muniName("__proto__", muni), "");
 });
 
-test("地名：丸めた位置だけを送り、うまくいかないときは空", async () => {
+test("地名：100m くらいに丸めた位置だけを送り、うまくいかないときは空", async () => {
   const seen = [];
   const fake = (body) => async (url) => {
     seen.push(String(url));
     if (String(url).includes("muni.json")) return { ok: true, json: async () => ({ 23105: "名古屋市中村区" }) };
     return body === null ? { ok: false, json: async () => ({}) } : { ok: true, json: async () => body };
   };
-  assert.strictEqual(await P.placeName(35.1712, 136.8811, fake({ results: { muniCd: "23105" } })), "名古屋市中村区");
-  assert.ok(seen.some((u) => u.includes("lat=35.17") && u.includes("lon=136.88")), "0.01 度に丸めて送る");
-  assert.ok(!seen.some((u) => u.includes("35.1712")), "細かい位置は送らない");
+  assert.strictEqual(await P.placeName(35.17123, 136.88119, fake({ results: { muniCd: "23105" } })), "名古屋市中村区");
+  assert.ok(seen.some((u) => u.includes("lat=35.171") && u.includes("lon=136.881")), "0.001 度に丸めて送る");
+  assert.ok(!seen.some((u) => u.includes("35.1712")), "もっと細かい位置は送らない");
   assert.strictEqual(await P.placeName(40, -100, fake({ results: {} })), "");
   assert.strictEqual(await P.placeName(35, 136, fake(null)), "");
   assert.strictEqual(await P.placeName(35, 136, async () => { throw new Error("offline"); }), "");
   assert.strictEqual(await P.placeName("x", 136, fake({})), "");
+  assert.strictEqual(await P.placeName(91, 136, fake({})), "");
+  assert.deepStrictEqual(P.fineLatLon("34.55312", 133.81664), { lat: 34.553, lon: 133.817 });
+  assert.strictEqual(P.fineLatLon(null, 1), null);
+});
+
+test("地名：市のさかいの近くでも、送った場所の市区町村（1km に丸めた点ではなく、100m の点で調べる）", async () => {
+  // 1km に丸めた点（34.55, 133.82）は岡山市南区、送った点のそば（34.553, 133.817）は倉敷市（国土地理院で確かめた）。
+  // 表は1回だけ読んで覚えるので（前のテストの表が残る）、ここでは聞いた位置を確かめる
+  const asked = [];
+  const fetchFn = async (url) => {
+    const u = String(url);
+    if (!u.includes("muni.json")) asked.push(u);
+    return { ok: true, json: async () => (u.includes("muni.json") ? {} : { results: { muniCd: "33202" } }) };
+  };
+  await P.placeName(34.5531, 133.8166, fetchFn);
+  assert.equal(asked.length, 1);
+  assert.match(asked[0], /lat=34\.553&lon=133\.817$/);
 });
 
 test("現在地の地名を覚えて読みなおせる（おかしな名前は捨てる）", () => {
   const store = new Map();
   const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
-  storage.setItem(S.KEY, JSON.stringify({ places: [], current: "here", here: { lat: 35.17, lon: 136.88, name: "  名古屋市中村区 " }, cache: {} }));
-  assert.deepStrictEqual(S.load(storage).here, { lat: 35.17, lon: 136.88, name: "名古屋市中村区" });
-  storage.setItem(S.KEY, JSON.stringify({ places: [], current: "here", here: { lat: 35.17, lon: 136.88, name: 5 }, cache: {} }));
+  storage.setItem(S.KEY, JSON.stringify({ places: [], current: "here", here: { lat: 35.17, lon: 136.88, name: "  名古屋市中村区 ", named: 2 }, cache: {} }));
+  assert.deepStrictEqual(S.load(storage).here, { lat: 35.17, lon: 136.88, name: "名古屋市中村区", named: 2 });
+  // 前の 1km の位置で調べた名前（named がない）は使わず、調べなおす
+  storage.setItem(S.KEY, JSON.stringify({ places: [], current: "here", here: { lat: 34.55, lon: 133.82, name: "岡山市南区" }, cache: {} }));
+  assert.deepStrictEqual(S.load(storage).here, { lat: 34.55, lon: 133.82 });
+  storage.setItem(S.KEY, JSON.stringify({ places: [], current: "here", here: { lat: 35.17, lon: 136.88, name: 5, named: 2 }, cache: {} }));
   assert.deepStrictEqual(S.load(storage).here, { lat: 35.17, lon: 136.88 });
 });

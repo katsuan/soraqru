@@ -2,10 +2,10 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610250955";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610250955";
-import { cardParams, dayCard } from "./js/card.js?v=202610250955";
-import { placeName } from "./js/place-name.js?v=202610250955";
+} from "./js/meteo.js?v=202610251048";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251048";
+import { cardParams, dayCard } from "./js/card.js?v=202610251048";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202610251048";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -182,7 +182,7 @@ $("savePlace").addEventListener("click", () => {
 $("useHere").addEventListener("click", async () => {
   $("useHere").disabled = true;
   const ll = await locate();
-  const name = ll ? cleanName(await placeName(ll.lat, ll.lon)) : "";
+  const name = ll ? cleanName(await placeName(...nameSpot(ll))) : "";
   $("useHere").disabled = false;
   if (!ll) return openAdd(geoMessage());
   pickPlace({ name: name || "いまの場所", ...ll, src: "gps" });
@@ -267,7 +267,10 @@ function locate() {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         ui.geo = "";
-        resolve(validLatLon(pos.coords.latitude, pos.coords.longitude));
+        const ll = validLatLon(pos.coords.latitude, pos.coords.longitude);
+        // 地名を調べるときだけ使う、100m くらいの位置（端末には残さない。js/place-name.js）
+        ui.fine = ll ? fineLatLon(pos.coords.latitude, pos.coords.longitude) : null;
+        resolve(ll);
       },
       (err) => {
         ui.geo = err && err.code === 1 ? "denied" : "none";
@@ -324,7 +327,7 @@ async function show() {
     }
     // 同じ場所なら前に調べた地名をそのまま使い、ちがえば調べなおす（天気は待たせない）
     const same = state.here && state.here.lat === ll.lat && state.here.lon === ll.lon;
-    state.here = same && state.here.name ? { ...ll, name: state.here.name } : ll;
+    state.here = same && state.here.name ? { ...ll, name: state.here.name, named: 2 } : ll;
     persist();
     place = currentPlace();
     if (!state.here.name) nameHere(ll);
@@ -332,11 +335,18 @@ async function show() {
   await loadFor(place, seq);
 }
 
+// 地名を調べる位置：取ったばかりの 100m くらいの位置（同じ場所のとき）。なければ 1km に丸めた位置
+function nameSpot(ll) {
+  const f = ui.fine;
+  return f && Math.abs(f.lat - ll.lat) < 0.006 && Math.abs(f.lon - ll.lon) < 0.006 ? [f.lat, f.lon] : [ll.lat, ll.lon];
+}
+
 // 現在地の地名を調べ、わかったら見出しを「📍 名古屋市中村区」に（わからなければ「現在地」のまま）
 async function nameHere(ll) {
-  const name = cleanName(await placeName(ll.lat, ll.lon));
+  const name = cleanName(await placeName(...nameSpot(ll)));
   if (!name || !state.here || state.here.lat !== ll.lat || state.here.lon !== ll.lon) return;
   state.here.name = name;
+  state.here.named = 2;
   persist();
   if (state.current === "here" && !ui.visit) $("nowPlace").textContent = `📍 ${name}`;
 }

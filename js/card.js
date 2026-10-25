@@ -1,5 +1,5 @@
 // そらくる（SoraQru）：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身。画面には触らない（テストで呼ぶ）
-import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, weatherOf, addDays, localHour, localYmd } from "./meteo.js?v=202610250955";
+import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, weatherOf, addDays, localHour, localYmd } from "./meteo.js?v=202610251048";
 
 export const PAGE_URL = "https://katsuan.github.io/soraqru/";
 export const CARD_COLOR = "#3A56D6"; // ロゴの群青

@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610251000">
-<link rel="stylesheet" href="style.css?v=202610250955">
+<link rel="stylesheet" href="style.css?v=202610251048">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -118,7 +118,7 @@
     <details class="ls-fold" id="placesFold">
       <summary><span class="ls-fold-icon" aria-hidden="true">🔒</span>覚えた地点<span id="placesMeta" class="ls-fold-meta"></span></summary>
       <div class="ls-fold-body">
-        <p class="ls-hint">地点と天気の結果は、この端末（ブラウザ）の中だけに残します。現在地は 1km くらいに丸めて覚え、その丸めた位置で地名（市区町村）を国土地理院に問い合わせます。</p>
+        <p class="ls-hint">地点と天気の結果は、この端末（ブラウザ）の中だけに残します。現在地は 1km くらいに丸めて覚えます。地名（市区町村）を調べるときだけ、100m くらいに丸めた位置を国土地理院に送ります（残しません）。</p>
         <ul id="placeList" class="place-list"></ul>
         <button id="clearAll" class="link danger" type="button">この端末の記録をすべて消す</button>
       </div>
@@ -146,7 +146,7 @@
 
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js" defer></script>
-<script type="module" src="app.js?v=202610250955"></script>
+<script type="module" src="app.js?v=202610251048"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="soraqru" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

@@ -1,9 +1,9 @@
 // そらくる（SoraQru）：この端末に残すもの（localStorage の soraqru:v1）。読むときは形を確かめる
 //   places  … 覚えた地点 [{ id, name, emoji, lat, lon, src（"search"＝地名で探した・"gps"＝いまの場所） }]
 //   current … 見ている地点（"here"＝現在地、または places の id）
-//   here    … 前に取れた現在地（0.01 度に丸めたもの。次に開いたとき、先に前の結果を出すため）と、その地名（name。例：名古屋市中村区。わからなければ無し）
+//   here    … 前に取れた現在地（0.01 度に丸めたもの。次に開いたとき、先に前の結果を出すため）と、その地名（name。例：名古屋市中村区。わからなければ無し。named: 2 は 100m くらいの位置で調べた印）
 //   cache   … 地点ごとの天気（{ "35.17,136.88": { at（取った時刻 ms）, data } }。1時間ほどは聞きなおさない）
-import { cleanForecast, validLatLon } from "./meteo.js?v=202610250955";
+import { cleanForecast, validLatLon } from "./meteo.js?v=202610251048";
 
 export const KEY = "soraqru:v1";
 export const MAX_PLACES = 8;
@@ -55,8 +55,9 @@ export function parse(raw, now = Date.now()) {
   state.current = state.places.some((p) => p.id === v.current) ? v.current : "here";
   if (v.here && typeof v.here === "object") {
     state.here = validLatLon(v.here.lat, v.here.lon);
-    const name = state.here && typeof v.here.name === "string" ? cleanName(v.here.name) : "";
-    if (name) state.here.name = name;
+    // 地名は、100m くらいの位置で調べたもの（named: 2）だけ使う。前の 1km の位置で調べた名前は、市のさかいでずれることがあるので調べなおす
+    const name = state.here && v.here.named === 2 && typeof v.here.name === "string" ? cleanName(v.here.name) : "";
+    if (name) Object.assign(state.here, { name, named: 2 });
   }
   if (v.cache && typeof v.cache === "object" && !Array.isArray(v.cache)) {
     for (const [key, entry] of Object.entries(v.cache).slice(0, MAX_CACHE * 2)) {
