@@ -25,8 +25,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610251000">
-<link rel="stylesheet" href="style.css?v=202610251110">
+<link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610260300">
+<link rel="stylesheet" href="style.css?v=202610260510">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -51,11 +51,16 @@
     <ul id="results" class="results" aria-label="見つかった地点"></ul>
     <div id="nameBox" class="name-box" hidden>
       <p class="sub-title">「<span id="pickedName"></span>」をなんと呼ぶ？</p>
-      <div id="emojiPick" class="emojis" role="radiogroup" aria-label="しるし"></div>
-      <label class="ls-field">
-        <span class="ls-label">呼び名（なくてもOK）</span>
-        <input id="placeName" class="ls-input" maxlength="12" placeholder="例：実家・職場" autocomplete="off" enterkeyhint="done">
-      </label>
+      <!-- 入力枠の中の左にしるし [📍 呼び名]（Q キットの ls-pickfield。ろくが・さくせん盤・つづくと同じ形）。
+           しるしを押したとき・呼び名を入れているあいだは、下に選べるしるし（しっぽがしるしを指す） -->
+      <div class="ls-field">
+        <span class="ls-label" id="placeNameLabel">しるしと呼び名（呼び名はなくてもOK）</span>
+        <div id="placeField" class="ls-pickfield">
+          <button id="emojiBtn" class="ls-pickfield-btn" type="button" aria-controls="emojiPick"><span id="emojiNow">📍</span></button>
+          <input id="placeName" maxlength="12" placeholder="例：実家・職場" autocomplete="off" enterkeyhint="done" aria-labelledby="placeNameLabel">
+        </div>
+        <div id="emojiPick" class="ls-picker" role="radiogroup" aria-label="しるし" style="--cols: 8" hidden></div>
+      </div>
       <button id="savePlace" class="ls-button is-primary is-block" type="button">＋ 地点を覚える</button>
     </div>
     <div class="form-actions">
@@ -156,8 +161,8 @@
 
 <script src="https://katsuan.github.io/line-share/shared/qlove-bot.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
-<script src="https://katsuan.github.io/line-share/shared/ui.js" defer></script>
-<script type="module" src="app.js?v=202610251110"></script>
+<script src="https://katsuan.github.io/line-share/shared/ui.js?v=202610260300" defer></script>
+<script type="module" src="app.js?v=202610260510"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="soraqru" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

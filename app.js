@@ -3,12 +3,12 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf, daysFromToday, FORECAST_MAX_DAYS
-} from "./js/meteo.js?v=202610251110";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251110";
-import { cardParams, dayCard } from "./js/card.js?v=202610251110";
-import { readVisit } from "./js/link.js?v=202610251110";
-import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610251110";
-import { fineLatLon, placeName } from "./js/place-name.js?v=202610251110";
+} from "./js/meteo.js?v=202610260510";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610260510";
+import { cardParams, dayCard } from "./js/card.js?v=202610260510";
+import { readVisit } from "./js/link.js?v=202610260510";
+import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610260510";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202610260510";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -108,10 +108,16 @@ function closeAdd() {
 }
 $("addCancel").addEventListener("click", closeAdd);
 
-// 地点のしるしの候補を描く
+// 地点のしるし：呼び名の入力枠の中の左。押したとき・呼び名を入れているあいだは、下に選べるしるし（Q キットの pickField）
+const emojiPick = window.LineShareUI?.pickField?.({ field: $("placeField"), button: $("emojiBtn"), input: $("placeName"), picker: $("emojiPick") }) || null;
+// Q キットが古い・読めないときは、押して開く・たたむだけ
+if (!emojiPick) $("emojiBtn").addEventListener("click", () => ($("emojiPick").hidden = !$("emojiPick").hidden));
+// 地点のしるしの候補と、いまのしるしを描く
 function renderEmojiPick() {
+  $("emojiNow").textContent = ui.emoji;
+  $("emojiBtn").setAttribute("aria-label", `しるしを選ぶ（いま：${ui.emoji}）`);
   $("emojiPick").innerHTML = PLACE_EMOJIS.map(
-    (e) => `<button class="ls-chip emoji" type="button" role="radio" aria-checked="${e === ui.emoji}" data-emoji="${e}" aria-label="${e}">${e}</button>`
+    (e) => `<button class="ls-picker-item" type="button" role="radio" aria-checked="${e === ui.emoji}" data-emoji="${e}" aria-label="${e}">${e}</button>`
   ).join("");
 }
 $("emojiPick").addEventListener("click", (e) => {
@@ -119,6 +125,8 @@ $("emojiPick").addEventListener("click", (e) => {
   if (!b) return;
   ui.emoji = b.dataset.emoji;
   renderEmojiPick();
+  // 選んだらたたむ（呼び名を入れているあいだは開いたまま）
+  if (document.activeElement !== $("placeName")) emojiPick ? emojiPick.close() : ($("emojiPick").hidden = true);
 });
 
 $("searchForm").addEventListener("submit", async (e) => {
