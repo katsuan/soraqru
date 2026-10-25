@@ -2,10 +2,10 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610250934";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610250934";
-import { cardParams } from "./js/card.js?v=202610250934";
-import { placeName } from "./js/place-name.js?v=202610250934";
+} from "./js/meteo.js?v=202610250938";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610250938";
+import { cardParams, dayCard } from "./js/card.js?v=202610250938";
+import { placeName } from "./js/place-name.js?v=202610250938";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -17,7 +17,6 @@ const ui = {
   emoji: PLACE_EMOJIS[1],
   geo: "", // 現在地のようす（""・"wait"・"denied"・"none"）
   shown: null, // いま出している { place, data, at }
-  sendDays: [0, 1], // 送る日（0＝今日・1＝明日）
   seq: 0
 };
 
@@ -451,19 +450,74 @@ function render(place, data, at, note) {
   renderSend();
 }
 
-// 送る日を選ぶ（今日と明日の2枚・今日だけ・明日だけ）
+// ---- カードで送る：送る日（今日・明日）を、カードの見本つきの札で選ぶシート ----
+const sendSheet = $("sendSheet");
+const PICKS = [
+  { day: 0, input: "pickToday", preview: "previewToday" },
+  { day: 1, input: "pickTomorrow", preview: "previewTomorrow" }
+];
+
+// おくるんのカードと同じ並び（色の帯に見出し・日付 → タイトル → 中身の枠）を小さく描く。文字は textContent で入れる
+function previewCardEl(q) {
+  const el = (tag, className, text) => Object.assign(document.createElement(tag), { className, textContent: text ?? "" });
+  const card = el("div", "cp");
+  const head = el("div", "cp-head");
+  head.style.background = q.get("customColor");
+  head.append(el("b", "", q.get("headerTitle")), el("small", "", q.get("date")));
+  const body = el("div", "cp-body");
+  body.append(el("p", "cp-title", q.get("title")), el("p", "cp-detail", q.get("detail")));
+  card.append(head, body);
+  return card;
+}
+
+function openSend() {
+  const s = ui.shown;
+  if (!s) return;
+  // 夜（18時から）は、明日のぶんだけを先に選んでおく
+  const evening = localHour(new Date(), s.data.offset) >= 18;
+  $("pickToday").checked = !evening;
+  $("pickTomorrow").checked = true;
+  for (const p of PICKS) $(p.preview).replaceChildren(previewCardEl(dayCard(s.place, s.data, p.day, new Date())));
+  renderSend();
+  sendSheet.hidden = false;
+  // 2枚の見本は、高いほうに高さをそろえる（LINE でも横に並んだカードは同じ高さになる）
+  const cards = [...sendSheet.querySelectorAll(".pick-preview > .cp")];
+  cards.forEach((c) => (c.style.minHeight = ""));
+  requestAnimationFrame(() => {
+    const tallest = Math.max(...cards.map((c) => c.offsetHeight));
+    cards.forEach((c) => (c.style.minHeight = `${tallest}px`));
+  });
+  $("cardBtn").focus({ preventScroll: true });
+}
+
+function closeSend() {
+  sendSheet.hidden = true;
+}
+
 function renderSend() {
   const s = ui.shown;
-  const key = ui.sendDays.join(",");
-  $("sendDays").querySelectorAll("[data-days]").forEach((b) => b.setAttribute("aria-checked", String(b.dataset.days === key)));
-  if (!s) return;
-  $("cardBtn").href = window.OQRN ? window.OQRN.cardUrl(cardParams(s.place, s.data, new Date(), ui.sendDays)) : "#";
+  const days = PICKS.filter((p) => $(p.input).checked).map((p) => p.day);
+  const btn = $("cardBtn");
+  btn.textContent = days.length ? `カードで送る（${days.length}枚）` : "送る日を選んでね";
+  btn.classList.toggle("is-oqrn", Boolean(days.length)); // おくるんのマークは、送れるときだけ
+  btn.classList.toggle("is-disabled", !days.length);
+  btn.setAttribute("aria-disabled", String(!days.length));
+  btn.href = s && days.length && window.OQRN ? window.OQRN.cardUrl(cardParams(s.place, s.data, new Date(), days)) : "#";
 }
-$("sendDays").addEventListener("click", (e) => {
-  const b = e.target.closest("[data-days]");
-  if (!b) return;
-  ui.sendDays = b.dataset.days.split(",").map(Number);
-  renderSend();
+
+$("openSend").addEventListener("click", openSend);
+PICKS.forEach((p) => $(p.input).addEventListener("change", renderSend));
+$("cardBtn").addEventListener("click", (e) => {
+  if ($("cardBtn").getAttribute("aria-disabled") === "true") return e.preventDefault();
+  renderSend(); // 開いたままの時刻が変わっていても、押したときの中身で
+  setTimeout(closeSend, 300);
+});
+$("sendCancel").addEventListener("click", closeSend);
+sendSheet.addEventListener("click", (e) => {
+  if (e.target === sendSheet) closeSend();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !sendSheet.hidden) closeSend();
 });
 
 function dayHtml(data, index, now, hour) {

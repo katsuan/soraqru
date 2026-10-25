@@ -26,7 +26,7 @@
 <link rel="preconnect" href="https://api.open-meteo.com">
 <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://katsuan.github.io/line-share/shared/ui.css?v=202610251000">
-<link rel="stylesheet" href="style.css?v=202610250934">
+<link rel="stylesheet" href="style.css?v=202610250938">
 </head>
 <body>
 <main class="ls-page ls-stack">
@@ -92,13 +92,8 @@
   <!-- 送る -->
   <section id="sendPanel" class="ls-panel" aria-labelledby="sendTitle" hidden>
     <h2 id="sendTitle" class="ls-panel-title">📤 家族や友だちに</h2>
-    <p class="ls-hint">天気と、気圧の変化の目安が大きくなる時間を、1日1枚のカードにして送れます（今日と明日なら、横に並んだ2枚）。</p>
-    <div id="sendDays" class="ls-chips send-days" role="radiogroup" aria-label="送る日">
-      <button class="ls-chip" type="button" role="radio" aria-checked="true" data-days="0,1">今日と明日</button>
-      <button class="ls-chip" type="button" role="radio" aria-checked="false" data-days="0">今日だけ</button>
-      <button class="ls-chip" type="button" role="radio" aria-checked="false" data-days="1">明日だけ</button>
-    </div>
-    <a id="cardBtn" class="ls-button is-block line is-oqrn" href="#">カードで送る</a>
+    <p class="ls-hint">天気と、気圧の変化の目安が大きくなる時間を、1日1枚のカードにして送れます。送る日は、次の画面で選べます。</p>
+    <button id="openSend" class="ls-button is-block line is-oqrn" type="button">カードで送る</button>
   </section>
 
   <div class="ls-folds">
@@ -135,9 +130,23 @@
   <div data-tool-share></div>
 </main>
 
+<!-- カードで送る：送る日（今日・明日）を、カードの見本つきの札で選ぶ（さくせん盤の送る画面と同じ形） -->
+<div id="sendSheet" class="ls-sheet send-sheet" hidden>
+  <div class="ls-sheet-card" role="dialog" aria-modal="true" aria-labelledby="sendSheetTitle">
+    <p id="sendSheetTitle" class="ls-sheet-title">カードで送る</p>
+    <div class="card-picks">
+      <label class="pick"><input id="pickToday" type="checkbox" checked><b>今日</b><span id="previewToday" class="pick-preview"></span></label>
+      <label class="pick"><input id="pickTomorrow" type="checkbox" checked><b>明日</b><span id="previewTomorrow" class="pick-preview"></span></label>
+    </div>
+    <a id="cardBtn" class="ls-button is-block line is-oqrn" href="#">カードで送る</a>
+    <p class="ls-hint">2枚なら、1つのメッセージに横に並びます。カードのボタンから、その地点のそらくるが開きます。</p>
+    <button id="sendCancel" class="ls-sheet-cancel" type="button">やめる</button>
+  </div>
+</div>
+
 <script src="https://katsuan.github.io/line-share/shared/oqrn.js"></script>
 <script src="https://katsuan.github.io/line-share/shared/ui.js" defer></script>
-<script type="module" src="app.js?v=202610250934"></script>
+<script type="module" src="app.js?v=202610250938"></script>
 <script src="https://katsuan.github.io/line-share/shared/tool-share.js" data-tool="soraqru" defer></script>
 <script>if ("serviceWorker" in navigator) navigator.serviceWorker.register("./sw.js").catch(() => {});</script>
 </body>

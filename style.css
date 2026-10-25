@@ -112,8 +112,24 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .dot { width: 18px; height: 12px; border-radius: 3px; background: var(--c); }
 
 /* 送る */
-.send-days { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
-.send-days .ls-chip { justify-content: center; min-height: 44px; padding: 0 6px; white-space: nowrap; }
+/* カードで送る：送る日を選ぶシート（さくせん盤の送る画面と同じ形）。今日・明日の札を横に2つ。ボタンと説明は下に全幅 */
+.card-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
+.pick { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; align-items: center; gap: 6px; padding: 8px; border: 2px solid var(--ls-line); border-radius: 16px; background: var(--ls-surface); cursor: pointer; }
+.pick:has(input:checked) { border-color: var(--ls-accent); background: var(--ls-accent-soft); }
+.pick input { width: 20px; height: 20px; margin: 0; accent-color: var(--ls-accent); }
+.pick > b { font-size: 14px; }
+.pick-preview { grid-column: 1 / -1; display: block; }
+.pick:not(:has(input:checked)) .pick-preview { opacity: 0.45; }
+.ls-button.is-disabled { opacity: 0.5; pointer-events: auto; }
+/* カードの見本：おくるんのカードと同じ並びを小さく（LINE の見た目なので、暗い表示でも明るいまま。ux.md の A3） */
+.pick-preview .cp { zoom: 0.6; }
+.cp { display: flex; flex-direction: column; overflow: hidden; border-radius: 14px; background: #fff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12); color: #111827; font-size: 12px; font-weight: 400; }
+.cp-head { display: grid; gap: 2px; padding: 10px 14px; color: #fff; }
+.cp-head b { font-size: 15px; }
+.cp-head small { font-size: 10px; opacity: 0.95; }
+.cp-body { flex: 1; display: grid; align-content: start; gap: 8px; padding: 12px 14px; }
+.cp-title { margin: 0; font-size: 16px; font-weight: 800; overflow-wrap: anywhere; }
+.cp-detail { margin: 0; padding: 8px 10px; border-radius: 10px; background: #e7ebfa; color: #3a56d6; white-space: pre-line; overflow-wrap: anywhere; }
 
 /* 覚えた地点 */
 .place-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
