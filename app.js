@@ -2,10 +2,10 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610250938";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610250938";
-import { cardParams, dayCard } from "./js/card.js?v=202610250938";
-import { placeName } from "./js/place-name.js?v=202610250938";
+} from "./js/meteo.js?v=202610250955";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610250955";
+import { cardParams, dayCard } from "./js/card.js?v=202610250955";
+import { placeName } from "./js/place-name.js?v=202610250955";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;

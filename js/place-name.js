@@ -1,7 +1,7 @@
 // 現在地の地名（例：名古屋市中村区）を調べる。
 // 国土地理院の逆ジオコーダーで市区町村のコードを聞き、data/muni.json（tools/muni.py で作る表）で名前にする。
 // 送るのは 0.01 度（1km くらい）に丸めた位置だけ。日本の外・海の上・つながらないときは "" を返す（画面は「現在地」のまま）。
-import { validLatLon } from "./meteo.js?v=202610250938";
+import { validLatLon } from "./meteo.js?v=202610250955";
 
 const API = "https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress";
 const TIMEOUT_MS = 6000;

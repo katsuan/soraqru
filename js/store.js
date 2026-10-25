@@ -3,7 +3,7 @@
 //   current … 見ている地点（"here"＝現在地、または places の id）
 //   here    … 前に取れた現在地（0.01 度に丸めたもの。次に開いたとき、先に前の結果を出すため）と、その地名（name。例：名古屋市中村区。わからなければ無し）
 //   cache   … 地点ごとの天気（{ "35.17,136.88": { at（取った時刻 ms）, data } }。1時間ほどは聞きなおさない）
-import { cleanForecast, validLatLon } from "./meteo.js?v=202610250938";
+import { cleanForecast, validLatLon } from "./meteo.js?v=202610250955";
 
 export const KEY = "soraqru:v1";
 export const MAX_PLACES = 8;
