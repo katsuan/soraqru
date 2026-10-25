@@ -2,10 +2,11 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf, parseTarget, daysFromToday, FORECAST_MAX_DAYS
-} from "./js/meteo.js?v=202610251057";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251057";
-import { cardParams, dayCard } from "./js/card.js?v=202610251057";
-import { fineLatLon, placeName } from "./js/place-name.js?v=202610251057";
+} from "./js/meteo.js?v=202610251100";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251100";
+import { cardParams, dayCard } from "./js/card.js?v=202610251100";
+import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610251100";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202610251100";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -53,7 +54,8 @@ function readVisit() {
   const from = Object.prototype.hasOwnProperty.call(FROM_TOOLS, q.get("from")) ? FROM_TOOLS[q.get("from")] : "";
   if (ll) return { id: "visit", name: name || "送ってもらった地点", emoji: "📍", ...ll, src: "search", target, from };
   const query = cleanName(q.get("q"), 40);
-  if (query) return { id: "visit", name: name || cleanName(query), emoji: "📍", query, lat: null, lon: null, src: "search", target, from };
+  // alt：見つからなかったときの代わりの名前（ゆくさきなら、しおりの名前のはじめのことば）
+  if (query) return { id: "visit", name: name || cleanName(query), emoji: "📍", query, alt: cleanName(q.get("alt"), 40), lat: null, lon: null, src: "search", target, from };
   return null;
 }
 
@@ -324,10 +326,16 @@ async function show() {
   if (ui.visit && ui.visit.query && ui.visit.lat === null) {
     renderWaiting("場所をさがしています");
     try {
-      const list = parseGeocode(...(await Promise.all(geocodeUrls(ui.visit.query).map((url) => getJson(url)))));
+      let found = await findPlace(ui.visit.query);
+      // 見つからなければ代わりの名前で（見出しは「名古屋あたり」のように、場所がちがうとわかるように）
+      if (!found && ui.visit.alt) {
+        found = await findPlace(ui.visit.alt);
+        if (found) ui.visit.name = cleanName(`${ui.visit.alt}あたり`);
+      }
       if (seq !== ui.seq) return;
-      if (!list.length) return renderEmpty("🔎", `「${ui.visit.query}」の場所が見つかりませんでした。上の「＋ 地点」から探してね。`);
-      Object.assign(ui.visit, { lat: list[0].lat, lon: list[0].lon });
+      if (!found) return renderEmpty("🔎", `「${ui.visit.query}」の場所が見つかりませんでした。上の「＋ 地点」から探してね。`);
+      Object.assign(ui.visit, { lat: found.lat, lon: found.lon });
+      $("visitName").textContent = ui.visit.name;
     } catch {
       if (seq !== ui.seq) return;
       return renderEmpty("📡", "場所を探せませんでした。つながったら「もう一度」を押してね。", true);
@@ -565,6 +573,14 @@ sendSheet.addEventListener("click", (e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !sendSheet.hidden) closeSend();
 });
+
+// 場所の名前 → 位置：国土地理院（名前がぴったり合うもの）→ Open-Meteo の地名さがし（いちばんそれらしいもの）。なければ null
+async function findPlace(text) {
+  const gsi = pickGsi(await getJson(gsiSearchUrl(text)).catch(() => null), text);
+  if (gsi) return gsi;
+  const list = parseGeocode(...(await Promise.all(geocodeUrls(text).map((url) => getJson(url).catch(() => null)))));
+  return list[0] || null;
+}
 
 // ---- 見たい日（ほかのツールから開いたとき） ----
 const targetOf = (place) => (place && place.id === "visit" && ui.visit ? ui.visit.target : null);

@@ -428,3 +428,15 @@ test("明日より先の日は、16日ぶん聞いて読む（ふだんは3日�
   assert.equal(M.parseForecast(json, NOW).hours.length, 72);
   assert.equal(M.parseForecast(json, NOW, 24).hours.length, 24);
 });
+
+test("場所の名前で探す：国土地理院は名前がぴったり合うものだけ（都道府県を外しても）", async () => {
+  const G = await import("../js/place-search.js");
+  const r = (title, lon, lat) => ({ properties: { title }, geometry: { coordinates: [lon, lat] } });
+  assert.deepEqual(G.pickGsi([r("沖縄県沖縄市", 127.806, 26.334), r("沖縄美ら海水族館", 127.8779, 26.6948)], "沖縄美ら海水族館"), { name: "沖縄美ら海水族館", lat: 26.69, lon: 127.88 });
+  assert.deepEqual(G.pickGsi([r("岡山県倉敷市林", 133.814, 34.533)], "倉敷市林"), { name: "倉敷市林", lat: 34.53, lon: 133.81 });
+  assert.deepEqual(G.pickGsi([r("岡山県倉敷市林", 133.814, 34.533)], "岡山県倉敷市林"), { name: "岡山県倉敷市林", lat: 34.53, lon: 133.81 });
+  assert.equal(G.pickGsi([r("北海道音更町豊田", 143.3, 43.1)], "豊田スタジアム"), null);
+  for (const bad of [null, {}, "x", [null], [{ properties: {} }], [r("沖縄", "x", 1)]]) assert.equal(G.pickGsi(bad, "沖縄"), null);
+  assert.equal(G.pickGsi([r("沖縄", 1, 2)], ""), null);
+  assert.ok(G.gsiSearchUrl("国際通り").startsWith("https://msearch.gsi.go.jp/address-search/AddressSearch?q="));
+});
