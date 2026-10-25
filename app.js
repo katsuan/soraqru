@@ -2,9 +2,10 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf
-} from "./js/meteo.js?v=202610241456";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610241456";
-import { cardParams } from "./js/card.js?v=202610241456";
+} from "./js/meteo.js?v=202610251001";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251001";
+import { cardParams } from "./js/card.js?v=202610251001";
+import { placeName } from "./js/place-name.js?v=202610251001";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -182,9 +183,10 @@ $("savePlace").addEventListener("click", () => {
 $("useHere").addEventListener("click", async () => {
   $("useHere").disabled = true;
   const ll = await locate();
+  const name = ll ? cleanName(await placeName(ll.lat, ll.lon)) : "";
   $("useHere").disabled = false;
   if (!ll) return openAdd(geoMessage());
-  pickPlace({ name: "いまの場所", ...ll, src: "gps" });
+  pickPlace({ name: name || "いまの場所", ...ll, src: "gps" });
 });
 
 // 受けとった地点を覚える
@@ -321,11 +323,23 @@ async function show() {
       if (!state.places.length) openAdd(geoMessage());
       return;
     }
-    state.here = ll;
+    // 同じ場所なら前に調べた地名をそのまま使い、ちがえば調べなおす（天気は待たせない）
+    const same = state.here && state.here.lat === ll.lat && state.here.lon === ll.lon;
+    state.here = same && state.here.name ? { ...ll, name: state.here.name } : ll;
     persist();
     place = currentPlace();
+    if (!state.here.name) nameHere(ll);
   }
   await loadFor(place, seq);
+}
+
+// 現在地の地名を調べ、わかったら見出しを「📍 名古屋市中村区」に（わからなければ「現在地」のまま）
+async function nameHere(ll) {
+  const name = cleanName(await placeName(ll.lat, ll.lon));
+  if (!name || !state.here || state.here.lat !== ll.lat || state.here.lon !== ll.lon) return;
+  state.here.name = name;
+  persist();
+  if (state.current === "here" && !ui.visit) $("nowPlace").textContent = `📍 ${name}`;
 }
 
 async function loadFor(place, seq) {
@@ -391,6 +405,7 @@ function renderEmpty(icon, text, retry = false) {
 
 function render(place, data, at, note) {
   stopProgress();
+  if (place.id === "here") place = currentPlace(); // あとからわかった地名（名古屋市中村区など）を使う
   ui.shown = { place, data, at };
   const now = new Date();
   const hour = localHour(now, data.offset);
@@ -418,7 +433,7 @@ function render(place, data, at, note) {
         <span class="now-emoji" aria-hidden="true">${esc(w.emoji)}</span>
         <div>
           <p class="now-temp">${cur.temp === null ? "—" : esc(Math.round(cur.temp))}<small>℃</small></p>
-          <p class="now-label">${esc(w.label)}${info ? `<span>　最高 ${esc(deg(info.max))}／最低 ${esc(deg(info.min))}</span>` : ""}</p>
+          <p class="now-label"><span class="ls-nowrap">${esc(w.label)}</span>${info ? `<span>　最高 ${esc(deg(info.max))}／最低 ${esc(deg(info.min))}</span>` : ""}</p>
         </div>
       </div>
       <div class="now-hpa">
@@ -481,7 +496,7 @@ function dayHtml(data, index, now, hour) {
   <section class="ls-panel day" aria-label="${index ? "明日" : "今日"}">
     <div class="day-head">
       <h2 class="day-title">${index ? "明日" : "今日"} <small>${esc(dayLabel(key))}</small></h2>
-      <p class="day-weather"><span aria-hidden="true">${esc(w.emoji)}</span> ${esc(w.label)} <b class="max">${esc(deg(info?.max))}</b>/<b class="min">${esc(deg(info?.min))}</b>${info?.pop === null || info?.pop === undefined ? "" : ` <span class="pop">☔${esc(Math.round(info.pop))}%</span>`}</p>
+      <p class="day-weather"><span aria-hidden="true">${esc(w.emoji)}</span> <span class="ls-nowrap">${esc(w.label)}</span> <b class="max">${esc(deg(info?.max))}</b>/<b class="min">${esc(deg(info?.min))}</b>${info?.pop === null || info?.pop === undefined ? "" : ` <span class="pop">☔${esc(Math.round(info.pop))}%</span>`}</p>
     </div>
     <p class="band-label">気圧の変化の目安</p>
     <div class="band" role="img" aria-label="${esc(`気圧の変化の目安：${summary.replace(/\n/g, "、")}`)}">${cells}</div>

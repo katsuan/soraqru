@@ -11,6 +11,7 @@ import { createRequire } from "node:module";
 import * as M from "../js/meteo.js";
 import * as S from "../js/store.js";
 import * as C from "../js/card.js";
+import * as P from "../js/place-name.js";
 
 const require = createRequire(import.meta.url);
 const OQRN = path.join(os.homedir(), "GitHub/q-oqrn");
@@ -348,4 +349,41 @@ test("気温の書き方（カードと画面で同じ）：四捨五入して �
   assert.equal(deg(-0.4), "0°");
   assert.equal(deg(null), "—");
   assert.equal(deg(undefined), "—");
+});
+
+// ---- 現在地の地名（国土地理院の逆ジオコーダー＋data/muni.json） ----
+test("地名：市区町村のコードを名前にする", () => {
+  const muni = JSON.parse(fs.readFileSync(new URL("../data/muni.json", import.meta.url), "utf8"));
+  assert.strictEqual(P.muniCode({ results: { muniCd: "23105", lv01Nm: "椿町" } }), "23105");
+  assert.strictEqual(P.muniCode({ results: { muniCd: "01100" } }), "1100");
+  assert.strictEqual(P.muniName("23105", muni), "名古屋市中村区");
+  assert.strictEqual(P.muniName("1100", muni), "札幌市");
+  for (const bad of [null, {}, { results: {} }, { results: { muniCd: "abc" } }, { results: { muniCd: 23105 } }]) assert.strictEqual(P.muniCode(bad), "");
+  assert.strictEqual(P.muniName("99999", muni), "");
+  assert.strictEqual(P.muniName("__proto__", muni), "");
+});
+
+test("地名：丸めた位置だけを送り、うまくいかないときは空", async () => {
+  const seen = [];
+  const fake = (body) => async (url) => {
+    seen.push(String(url));
+    if (String(url).includes("muni.json")) return { ok: true, json: async () => ({ 23105: "名古屋市中村区" }) };
+    return body === null ? { ok: false, json: async () => ({}) } : { ok: true, json: async () => body };
+  };
+  assert.strictEqual(await P.placeName(35.1712, 136.8811, fake({ results: { muniCd: "23105" } })), "名古屋市中村区");
+  assert.ok(seen.some((u) => u.includes("lat=35.17") && u.includes("lon=136.88")), "0.01 度に丸めて送る");
+  assert.ok(!seen.some((u) => u.includes("35.1712")), "細かい位置は送らない");
+  assert.strictEqual(await P.placeName(40, -100, fake({ results: {} })), "");
+  assert.strictEqual(await P.placeName(35, 136, fake(null)), "");
+  assert.strictEqual(await P.placeName(35, 136, async () => { throw new Error("offline"); }), "");
+  assert.strictEqual(await P.placeName("x", 136, fake({})), "");
+});
+
+test("現在地の地名を覚えて読みなおせる（おかしな名前は捨てる）", () => {
+  const store = new Map();
+  const storage = { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, v) };
+  storage.setItem(S.KEY, JSON.stringify({ places: [], current: "here", here: { lat: 35.17, lon: 136.88, name: "  名古屋市中村区 " }, cache: {} }));
+  assert.deepStrictEqual(S.load(storage).here, { lat: 35.17, lon: 136.88, name: "名古屋市中村区" });
+  storage.setItem(S.KEY, JSON.stringify({ places: [], current: "here", here: { lat: 35.17, lon: 136.88, name: 5 }, cache: {} }));
+  assert.deepStrictEqual(S.load(storage).here, { lat: 35.17, lon: 136.88 });
 });

@@ -137,3 +137,6 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
   :root[data-ls-dark="auto"] .day-weather .max { color: #ff8a78; }
   :root[data-ls-dark="auto"] .cell.is-now { outline-color: #fff; }
 }
+
+/* 「通/常」「くも/り」のように、短い言葉の途中で折り返さない（天気の名前は ls-nowrap で包む） */
+.level-pill, .legend li, .ls-nowrap { white-space: nowrap; }
