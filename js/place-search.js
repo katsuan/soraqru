@@ -1,7 +1,7 @@
 // 場所の名前で探す（ほかのツールから ?q= で開いたとき）。国土地理院の住所さがし → Open-Meteo の地名さがし の順。
 // 国土地理院は住所・施設の名前（「沖縄美ら海水族館」「国際通り」「岡山県倉敷市林」）に強く、Open-Meteo は市や町の名前に強い。
 // 国土地理院の結果は、名前がぴったり合うもの（都道府県を外しても合うもの）だけ使う（「豊田スタジアム」で「音更町豊田」をひろわないように）。
-import { validLatLon } from "./meteo.js?v=202610251100";
+import { validLatLon } from "./meteo.js?v=202610251105";
 
 export const GSI_SEARCH_API = "https://msearch.gsi.go.jp/address-search/AddressSearch";
 

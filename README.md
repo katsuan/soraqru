@@ -56,10 +56,13 @@
 | ファイル | 中身 |
 |---|---|
 | `index.html`・`style.css` | 画面と見た目（スマホ前提。入力欄は 16px 以上）。部品はおくるんの Q キット。`style.css` には、そらくるの色と、気圧の帯・1時間ごとの見た目だけ |
-| `app.js` | 操作（現在地・地点・天気を取る・描く・送る） |
+| `app.js` | 画面の入口（現在地・地点・天気を取る・描く・送る） |
 | `js/meteo.js` | Open-Meteo の返事の読みこみ・気圧の変化の目安・天気の絵と言葉・地名さがし |
 | `js/store.js` | 端末に残すもの（地点・覚えた天気） |
 | `js/card.js` | おくるんのお知らせカードに渡す中身 |
+| `js/link.js` | URL の受け渡し（送ったカードから開くリンク・ほかのツールから開いたときの `?at=`・`?q=`・`?date=`・`?hour=`・`?from=` を読む） |
+| `js/place-search.js` | 場所の名前で探す（国土地理院の住所さがし → Open-Meteo の地名さがし） |
+| `js/place-name.js`・`data/muni.json` | 現在地の市区町村の名前（国土地理院の逆ジオコーダー＋市区町村の表。表は `tools/muni.py` で作る） |
 | `test/` | `npm test`（`node --test test/`）。気圧の段階・返事の読みこみ（壊れた・欠けた返事）・端末の中身・カード（おくるんの組み立てをそのまま動かし、`q-oqrn/tools/qtest/fake-gas.js` の `checkMessages` で LINE が受けつける形かを見る） |
 | `tools/icon.py` | アイコン・ロゴ・OGP |
 

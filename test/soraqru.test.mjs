@@ -11,6 +11,7 @@ import { createRequire } from "node:module";
 import * as M from "../js/meteo.js";
 import * as S from "../js/store.js";
 import * as C from "../js/card.js";
+import * as L from "../js/link.js";
 import * as P from "../js/place-name.js";
 
 const require = createRequire(import.meta.url);
@@ -309,8 +310,8 @@ test("カード：1日1枚。今日と明日は2枚（2枚目は card=）・今�
 
 test("カード：現在地・いまの場所から足した地点は、場所をリンクに入れない", () => {
   const data = M.parseForecast(sample(), NOW);
-  assert.equal(C.cardParams(null, data, NOW).get("actionUrl"), C.PAGE_URL);
-  assert.equal(C.cardParams({ name: "実家", lat: 35.18, lon: 136.91, src: "gps" }, data, NOW).get("actionUrl"), C.PAGE_URL);
+  assert.equal(C.cardParams(null, data, NOW).get("actionUrl"), L.PAGE_URL);
+  assert.equal(C.cardParams({ name: "実家", lat: 35.18, lon: 136.91, src: "gps" }, data, NOW).get("actionUrl"), L.PAGE_URL);
   assert.equal(C.cardParams(null, data, NOW).get("title"), "現在地の今日");
 });
 
@@ -338,7 +339,7 @@ test("カード：おくるんで組み立てた Flex を LINE が受けつけ�
       const buttons = bubble.footer.contents.filter((x) => x.type === "button");
       assert.equal(buttons.length, 1);
       assert.equal(buttons[0].action.type, "uri");
-      assert.ok(buttons[0].action.uri.startsWith(C.PAGE_URL));
+      assert.ok(buttons[0].action.uri.startsWith(L.PAGE_URL));
     }
   }
 });
@@ -439,4 +440,21 @@ test("場所の名前で探す：国土地理院は名前がぴったり合う�
   for (const bad of [null, {}, "x", [null], [{ properties: {} }], [r("沖縄", "x", 1)]]) assert.equal(G.pickGsi(bad, "沖縄"), null);
   assert.equal(G.pickGsi([r("沖縄", 1, 2)], ""), null);
   assert.ok(G.gsiSearchUrl("国際通り").startsWith("https://msearch.gsi.go.jp/address-search/AddressSearch?q="));
+});
+
+test("開いたアドレスを読む（js/link.js）：?at= は地点、?q= は場所の名前。知らない ?from= は使わない。形のちがうものは読まない", () => {
+  const a = L.readVisit("?at=35.17,136.88&name=名古屋&date=2026-11-01&hour=13&from=yuqsaki");
+  assert.deepEqual([a.lat, a.lon, a.name, a.from, a.target.date, a.target.hour], [35.17, 136.88, "名古屋", "ゆくさき", "2026-11-01", 13]);
+  const q = L.readVisit("?q=那覇&alt=沖縄&from=evil");
+  assert.deepEqual([q.query, q.name, q.alt, q.from, q.lat], ["那覇", "那覇", "沖縄", "", null]);
+  assert.equal(L.readVisit("?at=999,1"), null);
+  assert.equal(L.readVisit(""), null);
+  assert.equal(L.readVisit("?at=35,136").name, "送ってもらった地点");
+});
+
+test("カードのボタンのリンク：地名で探した地点だけ場所を入れる。空白は %20", () => {
+  assert.equal(L.openUrl({ name: "実家", lat: 35.18, lon: 136.91, src: "gps" }), L.PAGE_URL);
+  const url = L.openUrl({ name: "名古屋 駅", lat: 35.17, lon: 136.88, src: "search" });
+  assert.doesNotMatch(url, /\+/);
+  assert.equal(L.readVisit(new URL(url).search).name, "名古屋 駅");
 });

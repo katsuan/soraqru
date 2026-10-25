@@ -1,21 +1,20 @@
 // そらくる（SoraQru）：画面の操作。天気は Open-Meteo だけ（js/meteo.js）、地点と結果はこの端末の中だけ（js/store.js）
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
-  validLatLon, weatherOf, parseTarget, daysFromToday, FORECAST_MAX_DAYS
-} from "./js/meteo.js?v=202610251100";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251100";
-import { cardParams, dayCard } from "./js/card.js?v=202610251100";
-import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610251100";
-import { fineLatLon, placeName } from "./js/place-name.js?v=202610251100";
+  validLatLon, weatherOf, daysFromToday, FORECAST_MAX_DAYS
+} from "./js/meteo.js?v=202610251105";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251105";
+import { cardParams, dayCard } from "./js/card.js?v=202610251105";
+import { readVisit } from "./js/link.js?v=202610251105";
+import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610251105";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202610251105";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
-// 開いたツールの名前（?from=）。知らない名前は使わない（ui を作るときに readVisit が読むので、ここに置く）
-const FROM_TOOLS = { yuqsaki: "ゆくさき", saqsen: "さくせん盤", qlovebot: "くらぶボット", kazoq: "KazoQ" };
 
 let state = load();
 const ui = {
-  visit: readVisit(), // 受けとったリンクの地点（覚えるまで、ここだけ）
+  visit: readVisit(location.search), // 受けとったリンクの地点（覚えるまで、ここだけ。js/link.js）
   picked: null, // 地名で探して選んだ地点
   emoji: PLACE_EMOJIS[1],
   geo: "", // 現在地のようす（""・"wait"・"denied"・"none"）
@@ -40,23 +39,6 @@ function say(text, undo) {
   $("status").textContent = text;
   clearTimeout(say.timer);
   if (text) say.timer = setTimeout(() => ($("status").textContent = ""), 3500);
-}
-
-// ?at=35.17,136.88&name=名古屋（送ってもらったカードのボタン）。形を確かめて読む
-// ほかのツール（ゆくさき・さくせん盤など）からは、場所の名前でも開ける（?q=那覇&date=2026-11-01&hour=13）。
-// date・hour は「見たい日」（target）。今日・明日ならその札に印、それより先（16日先まで）はその日の天気を一番上に
-function readVisit() {
-  const q = new URLSearchParams(location.search);
-  const target = parseTarget(q.get("date"), q.get("hour"));
-  const at = String(q.get("at") || "").split(",");
-  const ll = at.length === 2 ? validLatLon(at[0], at[1]) : null;
-  const name = cleanName(q.get("name"));
-  const from = Object.prototype.hasOwnProperty.call(FROM_TOOLS, q.get("from")) ? FROM_TOOLS[q.get("from")] : "";
-  if (ll) return { id: "visit", name: name || "送ってもらった地点", emoji: "📍", ...ll, src: "search", target, from };
-  const query = cleanName(q.get("q"), 40);
-  // alt：見つからなかったときの代わりの名前（ゆくさきなら、しおりの名前のはじめのことば）
-  if (query) return { id: "visit", name: name || cleanName(query), emoji: "📍", query, alt: cleanName(q.get("alt"), 40), lat: null, lon: null, src: "search", target, from };
-  return null;
 }
 
 // いま見ている地点（visit・現在地・覚えた地点）。現在地は { id: "here" }

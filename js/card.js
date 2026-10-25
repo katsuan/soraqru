@@ -1,7 +1,7 @@
 // そらくる（SoraQru）：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身。画面には触らない（テストで呼ぶ）
-import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, weatherOf, addDays, localHour, localYmd } from "./meteo.js?v=202610251100";
+import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, weatherOf, addDays, localHour, localYmd } from "./meteo.js?v=202610251105";
+import { openUrl } from "./link.js?v=202610251105";
 
-export const PAGE_URL = "https://katsuan.github.io/soraqru/";
 export const CARD_COLOR = "#3A56D6"; // ロゴの群青
 export const CREDIT = "天気データ：Open-Meteo.com（CC BY 4.0）";
 const DETAIL_MAX = 300;
@@ -22,13 +22,6 @@ export function dayText(data, index, now = new Date()) {
   if (!summary) return head;
   const title = `🌀 気圧${from ? `（${from}時から）` : ""}`;
   return /〜/.test(summary) ? `${head}\n${title}\n・${summary}` : `${head}\n${title}：${summary}`;
-}
-
-/** 送ったカードのボタンで開く URL。地名で探した地点だけ場所を入れる（現在地・いまの場所から足した地点は入れない） */
-export function openUrl(place) {
-  if (!place || place.src !== "search") return PAGE_URL;
-  const q = new URLSearchParams({ at: `${place.lat.toFixed(2)},${place.lon.toFixed(2)}`, name: place.name });
-  return `${PAGE_URL}?${String(q).replace(/\+/g, "%20")}`;
 }
 
 /** 1日ぶんのカード（index 0＝今日・1＝明日）。place は { name, lat, lon, src } */
