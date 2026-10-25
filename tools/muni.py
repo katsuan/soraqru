@@ -15,6 +15,7 @@ OUT = Path(__file__).resolve().parent.parent / "data" / "muni.json"
 ROW = re.compile(r"MUNI_ARRAY\[\"(\d+)\"\]\s*=\s*'(\d+),([^,]+),(\d+),([^']+)'")
 
 
+# 市区町村の表を読みこみ、data/muni.json（コード → 名前）を書き出す（python3 tools/muni.py で動かす）
 def main():
     text = urllib.request.urlopen(URL, timeout=30).read().decode("utf-8")
     table = {}

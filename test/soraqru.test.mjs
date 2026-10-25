@@ -264,6 +264,7 @@ function oqrnFlex(cardUrl) {
   return JSON.parse(JSON.stringify(vm.runInContext("cards = getQueryStates().map(hydrate); current = 0; state = cards[0]; buildDeckMessage({ credit: false })", ctx)));
 }
 
+// おくるんの oqrn.js をそのまま動かして、送るカードの URL（OQRN.cardUrl）を返す
 function cardUrl(params) {
   const sandbox = { window: {}, URLSearchParams };
   vm.runInNewContext(fs.readFileSync(path.join(OQRN, "shared/oqrn.js"), "utf8"), sandbox);
@@ -366,6 +367,7 @@ test("地名：市区町村のコードを名前にする", () => {
 
 test("地名：100m くらいに丸めた位置だけを送り、うまくいかないときは空", async () => {
   const seen = [];
+  // 決まった返事を返す偽物の fetch
   const fake = (body) => async (url) => {
     seen.push(String(url));
     if (String(url).includes("muni.json")) return { ok: true, json: async () => ({ 23105: "名古屋市中村区" }) };
@@ -387,6 +389,7 @@ test("地名：市のさかいの近くでも、送った場所の市区町村�
   // 1km に丸めた点（34.55, 133.82）は岡山市南区、送った点のそば（34.553, 133.817）は倉敷市（国土地理院で確かめた）。
   // 表は1回だけ読んで覚えるので（前のテストの表が残る）、ここでは聞いた位置を確かめる
   const asked = [];
+  // URL ごとに決まった返事を返す偽物の fetch
   const fetchFn = async (url) => {
     const u = String(url);
     if (!u.includes("muni.json")) asked.push(u);
@@ -432,6 +435,7 @@ test("明日より先の日は、16日ぶん聞いて読む（ふだんは3日�
 
 test("場所の名前で探す：国土地理院は名前がぴったり合うものだけ（都道府県を外しても）", async () => {
   const G = await import("../js/place-search.js");
+  // 国土地理院の住所さがしの返事の1件
   const r = (title, lon, lat) => ({ properties: { title }, geometry: { coordinates: [lon, lat] } });
   assert.deepEqual(G.pickGsi([r("沖縄県沖縄市", 127.806, 26.334), r("沖縄美ら海水族館", 127.8779, 26.6948)], "沖縄美ら海水族館"), { name: "沖縄美ら海水族館", lat: 26.69, lon: 127.88 });
   assert.deepEqual(G.pickGsi([r("岡山県倉敷市林", 133.814, 34.533)], "倉敷市林"), { name: "倉敷市林", lat: 34.53, lon: 133.81 });

@@ -3,7 +3,8 @@
 //   current … 見ている地点（"here"＝現在地、または places の id）
 //   here    … 前に取れた現在地（0.01 度に丸めたもの。次に開いたとき、先に前の結果を出すため）と、その地名（name。例：名古屋市中村区。わからなければ無し。named: 2 は 100m くらいの位置で調べた印）
 //   cache   … 地点ごとの天気（{ "35.17,136.88": { at（取った時刻 ms）, data } }。1時間ほどは聞きなおさない）
-import { cleanForecast, validLatLon } from "./meteo.js?v=202610251105";
+// 読まれるところ：app.js・js/link.js（テストは test/soraqru.test.mjs）
+import { cleanForecast, validLatLon } from "./meteo.js?v=202610251110";
 
 export const KEY = "soraqru:v1";
 export const MAX_PLACES = 8;
@@ -15,6 +16,7 @@ export const PLACE_EMOJIS = ["📍", "🏠", "🏢", "🏫", "🏡", "👵", "�
 
 const ID = /^[a-z0-9]{1,16}$/;
 
+// 空の中身
 export const blank = () => ({ places: [], current: "here", here: null, cache: {} });
 
 /** 名前：前後の空白をとり、長さに上限（絵文字を半分にしない） */
@@ -22,6 +24,7 @@ export function cleanName(v, max = MAX_NAME) {
   return [...String(v ?? "").replace(/[\u0000-\u001f\u007f]/g, "").trim()].slice(0, max).join("");
 }
 
+// 地点1つを正しい形にそろえる（だめなら null）
 export function cleanPlace(p) {
   if (!p || typeof p !== "object") return null;
   const ll = validLatLon(p.lat, p.lon);
@@ -30,6 +33,7 @@ export function cleanPlace(p) {
   return { id: p.id, name, emoji: PLACE_EMOJIS.includes(p.emoji) ? p.emoji : PLACE_EMOJIS[0], ...ll, src: p.src === "gps" ? "gps" : "search" };
 }
 
+// 天気を覚えるときの名前（"35.17,136.88"）
 export const placeKey = (lat, lon) => `${Number(lat).toFixed(2)},${Number(lon).toFixed(2)}`;
 
 /** 中身を確かめて読む。壊れていたら、読めるところだけ */
@@ -72,6 +76,7 @@ export function parse(raw, now = Date.now()) {
   return state;
 }
 
+// 端末に残したものを読む（読めなければ空）
 export function load(storage = globalThis.localStorage, now = Date.now()) {
   try {
     return parse(storage.getItem(KEY), now);
@@ -90,6 +95,7 @@ export function save(state, storage = globalThis.localStorage) {
   }
 }
 
+// ほかと重ならない地点の id を作る
 export function newId(state, rand = Math.random) {
   for (;;) {
     const id = rand().toString(36).slice(2, 10) || "p";
@@ -118,17 +124,20 @@ export function removePlace(state, id) {
   return { place, index };
 }
 
+// 消した地点を、もとの場所に戻す（いっぱい・同じものがあれば戻さない）
 export function restorePlace(state, { place, index }) {
   if (state.places.length >= MAX_PLACES || state.places.some((p) => p.id === place.id)) return;
   state.places.splice(Math.min(index, state.places.length), 0, place);
 }
 
+// 覚えた天気を返す（fresh：1時間以内か）。なければ null
 export function cached(state, lat, lon, now = Date.now()) {
   const entry = state.cache[placeKey(lat, lon)];
   if (!entry) return null;
   return { ...entry, fresh: now - entry.at < FRESH_MS };
 }
 
+// 天気を覚える（新しいものから決まった数だけ残す）
 export function putCache(state, lat, lon, data, now = Date.now()) {
   state.cache[placeKey(lat, lon)] = { at: now, data };
   trimCache(state);

@@ -1,6 +1,7 @@
 // そらくる（SoraQru）：URL の受け渡し（送ったカードから開くリンク・ほかのツールから開いたときに読む ?at= ?q= ?date= ?hour= ?from=）。画面には触らない
-import { parseTarget, validLatLon } from "./meteo.js?v=202610251105";
-import { cleanName } from "./store.js?v=202610251105";
+// 読まれるところ：app.js・js/card.js（テストは test/soraqru.test.mjs）
+import { parseTarget, validLatLon } from "./meteo.js?v=202610251110";
+import { cleanName } from "./store.js?v=202610251110";
 
 export const PAGE_URL = "https://katsuan.github.io/soraqru/";
 

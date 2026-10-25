@@ -3,6 +3,8 @@
 // 目安の決め方は KazoQ の予備（q-kazoq/01_27_ZUTOOL_GATEWAY_METEO.js）・SQriptable の気圧カードと同じ：
 // 3時間でどれだけ変わるか（上がっても下がっても）1 hPa 未満＝通常・2 未満＝やや注意・3 未満＝注意・それ以上＝警戒。
 // 医療の予測ではないので、画面では「気圧の変化の目安」と呼ぶ。
+// 読まれるところ：app.js・js/card.js・js/link.js・js/place-search.js・js/store.js（テストは test/soraqru.test.mjs）
+// 外からも：くらぶボット（~/GitHub/q-qlove-bot）のテストが、このファイルの関数を読んで同じ答えかを見る（関数の名前を変えるときは向こうも）
 
 export const FORECAST_API = "https://api.open-meteo.com/v1/forecast";
 export const GEOCODE_API = "https://geocoding-api.open-meteo.com/v1/search";
@@ -27,13 +29,16 @@ export function levelOf(change) {
   return value < 3 ? 2 : 3;
 }
 
+// 小数1けたに丸める
 const round1 = (n) => Math.round(n * 10) / 10;
+// 数として使えるならその数、ちがえば null
 const finite = (v) => (v === null || v === undefined || v === "" ? null : Number.isFinite(Number(v)) ? Number(v) : null);
 const TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 // 緯度・経度は 0.01 度（1km くらい）に丸める。覚えるとき・聞くときも同じ丸め方
 export const roundCoord = (n) => Math.round(Number(n) * 100) / 100;
+// 緯度・経度として正しければ 0.01 度に丸めて { lat, lon }、ちがえば null
 export function validLatLon(lat, lon) {
   const a = finite(lat);
   const b = finite(lon);
@@ -43,6 +48,7 @@ export function validLatLon(lat, lon) {
 // 予報は16日先まで（Open-Meteo）。旅や試合の日など、明日より先の日を見るときだけ長く聞く
 export const FORECAST_MAX_DAYS = 16;
 
+// Open-Meteo に天気を聞く URL（1時間ごとと日ごと。days 日ぶん）
 export function forecastUrl(lat, lon, days = 3) {
   const q = new URLSearchParams({
     latitude: roundCoord(lat).toFixed(2),
@@ -69,6 +75,7 @@ export function parseForecast(json, now = new Date(), maxHours = HOURS_KEEP) {
   const offset = finite(json.utc_offset_seconds) ?? 0;
   if (Math.abs(offset) > 14 * 3600) return null;
   const today = localYmd(now, offset);
+  // 1時間ごとの返事の、その名前の列（なければ空）
   const col = (name) => (Array.isArray(h[name]) ? h[name] : []);
   const hpaAt = new Map(h.time.map((t, i) => [t, finite(h.pressure_msl[i])]));
   const hours = [];
@@ -104,12 +111,14 @@ function shiftHours(t, n) {
 function parseDays(daily, hours) {
   const dates = [...new Set(hours.map((r) => r.t.slice(0, 10)))];
   const d = daily && typeof daily === "object" && Array.isArray(daily.time) ? daily : { time: [] };
+  // 日ごとの返事の、その名前の列（なければ空）
   const col = (name) => (Array.isArray(d[name]) ? d[name] : []);
   return dates.map((date) => {
     const i = d.time.indexOf(date);
     const rows = hours.filter((r) => r.t.startsWith(date));
     const temps = rows.map((r) => r.temp).filter((v) => v !== null);
     const pops = rows.map((r) => r.pop).filter((v) => v !== null);
+    // 日ごとの値があればそれ、なければ fallback
     const pick = (name, fallback) => (i >= 0 && finite(col(name)[i]) !== null ? finite(col(name)[i]) : fallback);
     return {
       date,
@@ -132,6 +141,7 @@ export function cleanForecast(v) {
   if (!v || typeof v !== "object" || !Array.isArray(v.hours) || !Array.isArray(v.days)) return null;
   const offset = finite(v.offset);
   if (offset === null || Math.abs(offset) > 14 * 3600) return null;
+  // 数として使えるならその数、ちがえば null
   const num = (x) => finite(x);
   const hours = v.hours
     .slice(0, HOURS_KEEP)
@@ -149,9 +159,11 @@ export function cleanForecast(v) {
 export function localYmd(now, offset) {
   return new Date(now.getTime() + offset * 1000).toISOString().slice(0, 10);
 }
+// その地点の今の時刻（0〜23）
 export function localHour(now, offset) {
   return new Date(now.getTime() + offset * 1000).getUTCHours();
 }
+// "YYYY-MM-DD" の n 日あとを返す
 export function addDays(ymd, n) {
   const d = new Date(`${ymd}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + n);
@@ -174,6 +186,7 @@ export function dayRows(data, index, now = new Date()) {
   const key = addDays(localYmd(now, data.offset), index);
   return data.hours.filter((r) => r.t.startsWith(key)).map((r) => ({ ...r, hour: Number(r.t.slice(11, 13)) }));
 }
+// 今日（0）・明日（1）の日ごとの天気（なければ null）
 export function dayInfo(data, index, now = new Date()) {
   if (!data) return null;
   const key = addDays(localYmd(now, data.offset), index);

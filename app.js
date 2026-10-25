@@ -1,13 +1,14 @@
 // そらくる（SoraQru）：画面の操作。天気は Open-Meteo だけ（js/meteo.js）、地点と結果はこの端末の中だけ（js/store.js）
+// 読まれるところ：index.html（画面の入口。部品は js/ から読む）
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf, daysFromToday, FORECAST_MAX_DAYS
-} from "./js/meteo.js?v=202610251105";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251105";
-import { cardParams, dayCard } from "./js/card.js?v=202610251105";
-import { readVisit } from "./js/link.js?v=202610251105";
-import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610251105";
-import { fineLatLon, placeName } from "./js/place-name.js?v=202610251105";
+} from "./js/meteo.js?v=202610251110";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610251110";
+import { cardParams, dayCard } from "./js/card.js?v=202610251110";
+import { readVisit } from "./js/link.js?v=202610251110";
+import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610251110";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202610251110";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -22,8 +23,10 @@ const ui = {
   seq: 0
 };
 
+// 文字を HTML に入れられる形にする（& < > " ' を置きかえる）
 const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
+// いまの地点・天気を端末に残す。残せなかったら知らせる
 function persist() {
   if (!save(state)) say("この端末に残せませんでした（プライベートブラウズでは、閉じると消えます）");
 }
@@ -31,6 +34,7 @@ function persist() {
 // 季節の絵文字をときどき文の後ろに（Q キットの season.js。まだ読めていなければ、そのまま）
 const cheer = (text) => (window.QSeason ? window.QSeason.decorate(text) : text);
 
+// 下に短い知らせを出す（undo があれば「元に戻す」ボタンつき）
 function say(text, undo) {
   if (window.LineShareUI?.toast) {
     window.LineShareUI.toast(text, undo ? { actionLabel: "元に戻す", onAction: undo } : {});
@@ -50,6 +54,7 @@ function currentPlace() {
 // ---- 地点の切りかえ ----
 function renderPlaceBar() {
   const cur = ui.visit ? "visit" : state.current;
+  // 地点の切りかえボタン1つの HTML
   const chip = (id, emoji, name) => `<button class="ls-chip is-small" type="button" aria-pressed="${cur === id}" data-place="${esc(id)}">${esc(emoji)} ${esc(name)}</button>`;
   $("placeBar").innerHTML =
     chip("here", "📍", "現在地") +
@@ -92,6 +97,7 @@ function openAdd(note = "") {
   $("addCancel").hidden = !state.places.length && ui.geo !== "" && ui.geo !== "wait";
   if (!note) $("searchInput").focus();
 }
+// 地点を足す欄を閉じて、入れたものを消す
 function closeAdd() {
   $("addPanel").hidden = true;
   $("results").innerHTML = "";
@@ -102,6 +108,7 @@ function closeAdd() {
 }
 $("addCancel").addEventListener("click", closeAdd);
 
+// 地点のしるしの候補を描く
 function renderEmojiPick() {
   $("emojiPick").innerHTML = PLACE_EMOJIS.map(
     (e) => `<button class="ls-chip emoji" type="button" role="radio" aria-checked="${e === ui.emoji}" data-emoji="${e}" aria-label="${e}">${e}</button>`
@@ -150,6 +157,7 @@ $("results").addEventListener("click", (e) => {
   pickPlace({ ...ui.results[Number(b.dataset.result)], src: "search" });
 });
 
+// 探した結果から地点を選び、呼び名としるしを決める欄を出す
 function pickPlace(p) {
   ui.picked = p;
   $("results").querySelectorAll("[data-result]").forEach((x) => x.setAttribute("aria-pressed", String(ui.results?.[Number(x.dataset.result)] === p)));
@@ -274,6 +282,7 @@ function locate() {
   });
 }
 
+// 現在地が使えないときの案内の文
 function geoMessage() {
   return ui.geo === "denied"
     ? "位置情報が使えないので、現在地の天気を出せません。地名で探すか、覚えた地点を選んでね。"
@@ -368,6 +377,7 @@ async function nameHere(ll) {
   if (state.current === "here" && !ui.visit) $("nowPlace").textContent = `📍 ${name}`;
 }
 
+// その地点の天気を出す（覚えた結果を先に出し、古ければ聞きなおす）
 async function loadFor(place, seq) {
   const hit = cached(state, place.lat, place.lon);
   if (hit) render(place, hit.data, hit.at, "");
@@ -394,6 +404,7 @@ async function loadFor(place, seq) {
 
 $("retry").addEventListener("click", () => show());
 
+// 取った時刻の書き方（きょうは「9:05」、ほかの日は「10/24 9:05」）
 const timeLabel = (ms) => {
   const d = new Date(ms);
   const today = new Date().toDateString() === d.toDateString();
@@ -403,12 +414,14 @@ const timeLabel = (ms) => {
 // ---- 描く ----
 // 待っているあいだは経過秒数を出す（3秒をこえるものは理由も。ux.md の B2）
 let stopProgress = () => {};
+// 読みこみ中の形（箱と経過秒数）を出す
 function renderWaiting(label) {
   stopProgress();
   ui.shown = null;
   $("nowPanel").setAttribute("aria-busy", "true");
   $("nowAt").textContent = "";
   $("nowBody").innerHTML = '<div class="ls-skeleton now-skeleton"></div><p class="ls-hint wait" id="waitText"></p>';
+  // 読みこみ中の文を入れかえる
   const show = (text) => $("waitText") && ($("waitText").textContent = text);
   stopProgress = window.LineShareUI?.progress ? window.LineShareUI.progress(label, show, { slowAfter: 6, slowNote: "電波が弱いと、時間がかかることがあります。" }) : (show(`${label}…`), () => {});
   $("nowNote").hidden = true;
@@ -417,6 +430,7 @@ function renderWaiting(label) {
   $("sendPanel").hidden = true;
 }
 
+// 天気を出せないときの形（絵と文、「もう一度」）を出す
 function renderEmpty(icon, text, retry = false) {
   stopProgress();
   ui.shown = null;
@@ -429,6 +443,7 @@ function renderEmpty(icon, text, retry = false) {
   $("sendPanel").hidden = true;
 }
 
+// いまの天気・今日と明日・送る欄を描く
 function render(place, data, at, note) {
   stopProgress();
   if (place.id === "here") place = currentPlace(); // あとからわかった地名（名古屋市中村区など）を使う
@@ -495,6 +510,7 @@ const PICKS = [
 
 // おくるんのカードと同じ並び（色の帯に見出し・日付 → タイトル → 中身の枠）を小さく描く。文字は textContent で入れる
 function previewCardEl(q) {
+  // 要素を1つ作る（文字は textContent で）
   const el = (tag, className, text) => Object.assign(document.createElement(tag), { className, textContent: text ?? "" });
   const card = el("div", "cp");
   const head = el("div", "cp-head");
@@ -506,6 +522,7 @@ function previewCardEl(q) {
   return card;
 }
 
+// 送る画面を開く（夜は明日のぶんだけ選んでおく。見本の高さをそろえる）
 function openSend() {
   const s = ui.shown;
   if (!s) return;
@@ -526,10 +543,12 @@ function openSend() {
   $("cardBtn").focus({ preventScroll: true });
 }
 
+// 送る画面を閉じる
 function closeSend() {
   sendSheet.hidden = true;
 }
 
+// 送る日の選び方に合わせて、送るボタンの文字と、押せるかを変える
 function renderSend() {
   const s = ui.shown;
   const days = PICKS.filter((p) => $(p.input).checked).map((p) => p.day);
@@ -566,6 +585,7 @@ async function findPlace(text) {
 
 // ---- 見たい日（ほかのツールから開いたとき） ----
 const targetOf = (place) => (place && place.id === "visit" && ui.visit ? ui.visit.target : null);
+// 見たい日の天気を見分ける名前（地点と日）
 const targetKey = (place, t) => `${place.lat},${place.lon},${t.date}`;
 
 // 明日より先の日：16日ぶんの予報を聞く（端末には覚えない。開いているあいだだけ）
@@ -586,6 +606,7 @@ async function loadTargetDay(place, t) {
   }
 }
 
+// 見たい日の案内の HTML（過ぎた・まだ先・読みこみ中）。n はきょうから何日先か
 function targetNoteHtml(t, n) {
   const when = `${dayLabel(t.date)}${t.hour === null ? "" : ` ${t.hour}時ごろ`}`;
   const text = n < 0
@@ -596,6 +617,7 @@ function targetNoteHtml(t, n) {
   return `<section class="ls-panel day target-day"><h2 class="day-title">📅 予定の日 <small>${esc(dayLabel(t.date))}</small></h2><p class="ls-hint">${esc(text)}</p></section>`;
 }
 
+// 1日ぶん（今日・明日・見たい日）の天気の HTML（気圧の帯・1時間ごと）
 function dayHtml(data, index, now, hour, target = null) {
   const rows = dayRows(data, index, now);
   const key = addDays(localYmd(now, data.offset), index);
@@ -639,6 +661,7 @@ function dayHtml(data, index, now, hour, target = null) {
   </section>`;
 }
 
+// 気圧の色の見本を描く
 function renderLegend() {
   document.querySelector(".legend").innerHTML = LEVELS.map((l) => `<li><span class="dot" style="--c:${l.color}"></span>${esc(l.label)}</li>`).join("");
 }
@@ -665,6 +688,7 @@ document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") refresh();
 });
 window.addEventListener("online", () => refresh());
+// 戻ってきたとき・時刻が変わったときに描きなおす（古ければ聞きなおす）
 function refresh() {
   const s = ui.shown;
   if (!s) return show();
@@ -673,18 +697,19 @@ function refresh() {
   render(s.place, hit.data, hit.at, "");
 }
 
-// 天気の知らせボットの案内は、確かめがすむまで ?preview=notify のときだけ出す
 // ---- くらぶボット（確かめ中）：たたみ欄は ?preview=notify か、もうつないでいる人だけに出す ----
 const botLink = window.QloveBotLink || null;
 const bot = { line: "" }; // ボットの LINE の ID（@…。ping で聞く。端末には残さない）
 if (botLink && (new URLSearchParams(location.search).get("preview") === "notify" || botLink.get())) $("notifyFold").hidden = false;
 
+// くらぶボットに届くか確かめ、ボットの LINE の ID を覚える。返事をそのまま返す
 async function pingBot(url) {
   const res = await botLink.ping(url);
   bot.line = res.ok && typeof res.line === "string" && /^@[0-9a-z._-]{2,40}$/i.test(res.line) ? res.line : "";
   return res;
 }
 
+// くらぶボットのつなぎ先の欄と、ようすの文を描く
 function renderBot(statusText) {
   if (!botLink) return;
   const url = botLink.get();

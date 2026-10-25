@@ -3,6 +3,7 @@
 // 送るのは 0.001 度（100m くらい）に丸めた位置だけ（端末に残す位置は 0.01 度＝1km のまま。地名を調べるときだけ使い、残さない）。
 // 1km に丸めた位置で調べると、市のさかいの近くでは、となりの市区町村になることがあるため（例：倉敷市林 → 岡山市南区）。
 // 日本の外・海の上・つながらないときは "" を返す（画面は「現在地」のまま）。
+// 読まれるところ：app.js（テストは test/soraqru.test.mjs）
 
 const API = "https://mreversegeocoder.gsi.go.jp/reverse-geocoder/LonLatToAddress";
 const TIMEOUT_MS = 6000;
@@ -20,6 +21,7 @@ export function muniName(code, muni) {
   return typeof name === "string" ? name : "";
 }
 
+// URL を読み、JSON を返す（6秒で打ち切り。うまくいかなければ null）
 async function getJson(url, fetchFn) {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
