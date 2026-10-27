@@ -472,3 +472,9 @@ test("地点のしるし：カスタムの絵文字は1つだけ。英数字・�
   assert.equal(S.placeMark(""), "📍");
   assert.equal(S.placeMark(null), "📍");
 });
+
+test("くらぶボットとつなぐ欄の名前は、ほかのツール（つづく）と同じ「🔗 くらぶボットとつなぐ」", () => {
+  const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(html, /<p class="sub-title">🔗 くらぶボットとつなぐ<\/p>/);
+  assert.doesNotMatch(html, /⚙️ くらぶボットとつなぐ/);
+});
