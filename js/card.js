@@ -1,7 +1,7 @@
 // そらくる（SoraQru）：おくるんのお知らせカード（OQRN.cardUrl）に渡す中身。画面には触らない（テストで呼ぶ）
 // 読まれるところ：app.js（テストは test/soraqru.test.mjs）
-import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, weatherOf, addDays, localHour, localYmd } from "./meteo.js?v=202610260600";
-import { openUrl } from "./link.js?v=202610260600";
+import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, weatherOf, addDays, localHour, localYmd } from "./meteo.js?v=202610291710";
+import { openUrl } from "./link.js?v=202610291710";
 
 export const CARD_COLOR = "#3A56D6"; // ロゴの群青
 export const CREDIT = "天気データ：Open-Meteo.com（CC BY 4.0）";

@@ -3,12 +3,12 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf, daysFromToday, FORECAST_MAX_DAYS
-} from "./js/meteo.js?v=202610260600";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, placeMark, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610260600";
-import { cardParams, dayCard } from "./js/card.js?v=202610260600";
-import { readVisit } from "./js/link.js?v=202610260600";
-import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610260600";
-import { fineLatLon, placeName } from "./js/place-name.js?v=202610260600";
+} from "./js/meteo.js?v=202610291710";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, placeMark, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610291710";
+import { cardParams, dayCard } from "./js/card.js?v=202610291710";
+import { readVisit } from "./js/link.js?v=202610291710";
+import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610291710";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202610291710";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -330,59 +330,74 @@ async function getJson(url) {
 async function show() {
   const seq = ++ui.seq;
   renderPlaceBar();
-  $("visitPanel").hidden = !ui.visit;
-  if (ui.visit) {
-    const t = ui.visit.target;
-    $("visitFrom").textContent = ui.visit.from ? `${ui.visit.from}で開いた` : "送ってもらった";
-    $("visitName").textContent = ui.visit.name;
-    $("visitWhen").textContent = t ? `の ${dayLabel(t.date)}${t.hour === null ? "" : ` ${t.hour}時ごろ`}の天気` : "";
-  }
-  // 場所の名前で開いたときは、先に探す（いちばんそれらしいもの。日本を先・人の多い順）
-  if (ui.visit && ui.visit.query && ui.visit.lat === null) {
-    renderWaiting("場所をさがしています");
-    try {
-      let found = await findPlace(ui.visit.query);
-      // 見つからなければ代わりの名前で（見出しは「名古屋あたり」のように、場所がちがうとわかるように）
-      if (!found && ui.visit.alt) {
-        found = await findPlace(ui.visit.alt);
-        if (found) ui.visit.name = cleanName(`${ui.visit.alt}あたり`);
-      }
-      if (seq !== ui.seq) return;
-      if (!found) return renderEmpty("🔎", `「${ui.visit.query}」の場所が見つかりませんでした。上の「＋ 地点」から探してね。`);
-      Object.assign(ui.visit, { lat: found.lat, lon: found.lon });
-      $("visitName").textContent = ui.visit.name;
-    } catch {
-      if (seq !== ui.seq) return;
-      return renderEmpty("📡", "場所を探せませんでした。つながったら「もう一度」を押してね。", true);
-    }
-  }
-  let place = currentPlace();
+  renderVisitHead();
+  if (!(await findVisitPlace(seq))) return;
+  const place = currentPlace();
   $("nowPlace").textContent = `${place.emoji} ${place.name}`;
-
-  if (place.id === "here") {
-    // 前に取れた現在地の結果を先に出してから、いまの場所を聞く
-    const before = state.here && cached(state, state.here.lat, state.here.lon);
-    if (before) render(place, before.data, before.at, "");
-    else renderWaiting("現在地をさがしています");
-    const ll = await locate();
-    if (seq !== ui.seq) return;
-    if (!ll) {
-      if (before) {
-        render(place, before.data, before.at, `${geoMessage()}（前に取れた現在地の情報です）`);
-      } else {
-        renderEmpty("📍", ui.geo === "denied" ? "位置情報が使えないため、現在地の天気は出せません。" : "現在地がわかりませんでした。");
-      }
-      if (!state.places.length) openAdd(geoMessage());
-      return;
-    }
-    // 同じ場所なら前に調べた地名をそのまま使い、ちがえば調べなおす（天気は待たせない）
-    const same = state.here && state.here.lat === ll.lat && state.here.lon === ll.lon;
-    state.here = same && state.here.name ? { ...ll, name: state.here.name, named: 2 } : ll;
-    persist();
-    place = currentPlace();
-    if (!state.here.name) nameHere(ll);
-  }
+  if (place.id === "here") return showHere(place, seq);
   await loadFor(place, seq);
+}
+
+// 送ってもらった・ほかのツールで開いた場所の見出し（だれから・どこの・いつの天気か）
+function renderVisitHead() {
+  $("visitPanel").hidden = !ui.visit;
+  if (!ui.visit) return;
+  const t = ui.visit.target;
+  $("visitFrom").textContent = ui.visit.from ? `${ui.visit.from}で開いた` : "送ってもらった";
+  $("visitName").textContent = ui.visit.name;
+  $("visitWhen").textContent = t ? `の ${dayLabel(t.date)}${t.hour === null ? "" : ` ${t.hour}時ごろ`}の天気` : "";
+}
+
+/**
+ * 場所の名前で開いたときは、先に探す（いちばんそれらしいもの。日本を先・人の多い順）
+ * 天気を読みに進めるなら true。見つからない・探せない・あとから別の場所を開いたときは false
+ */
+async function findVisitPlace(seq) {
+  if (!ui.visit || !ui.visit.query || ui.visit.lat !== null) return true;
+  renderWaiting("場所をさがしています");
+  try {
+    let found = await findPlace(ui.visit.query);
+    // 見つからなければ代わりの名前で（見出しは「名古屋あたり」のように、場所がちがうとわかるように）
+    if (!found && ui.visit.alt) {
+      found = await findPlace(ui.visit.alt);
+      if (found) ui.visit.name = cleanName(`${ui.visit.alt}あたり`);
+    }
+    if (seq !== ui.seq) return false;
+    if (!found) {
+      renderEmpty("🔎", `「${ui.visit.query}」の場所が見つかりませんでした。上の「＋ 地点」から探してね。`);
+      return false;
+    }
+    Object.assign(ui.visit, { lat: found.lat, lon: found.lon });
+    $("visitName").textContent = ui.visit.name;
+    return true;
+  } catch {
+    if (seq === ui.seq) renderEmpty("📡", "場所を探せませんでした。つながったら「もう一度」を押してね。", true);
+    return false;
+  }
+}
+
+// 現在地：前に取れた結果を先に出してから、いまの場所を聞いて天気を読む
+async function showHere(place, seq) {
+  const before = state.here && cached(state, state.here.lat, state.here.lon);
+  if (before) render(place, before.data, before.at, "");
+  else renderWaiting("現在地をさがしています");
+  const ll = await locate();
+  if (seq !== ui.seq) return;
+  if (!ll) {
+    if (before) {
+      render(place, before.data, before.at, `${geoMessage()}（前に取れた現在地の情報です）`);
+    } else {
+      renderEmpty("📍", ui.geo === "denied" ? "位置情報が使えないため、現在地の天気は出せません。" : "現在地がわかりませんでした。");
+    }
+    if (!state.places.length) openAdd(geoMessage());
+    return;
+  }
+  // 同じ場所なら前に調べた地名をそのまま使い、ちがえば調べなおす（天気は待たせない）
+  const same = state.here && state.here.lat === ll.lat && state.here.lon === ll.lon;
+  state.here = same && state.here.name ? { ...ll, name: state.here.name, named: 2 } : ll;
+  persist();
+  if (!state.here.name) nameHere(ll);
+  await loadFor(currentPlace(), seq);
 }
 
 // 地名を調べる位置：取ったばかりの 100m くらいの位置（同じ場所のとき）。なければ 1km に丸めた位置
@@ -474,39 +489,51 @@ function render(place, data, at, note) {
   ui.shown = { place, data, at, note };
   const now = new Date();
   const hour = localHour(now, data.offset);
-  const today = dayRows(data, 0, now);
-  const cur = today.find((r) => r.hour === hour) || today[0];
   $("nowPanel").setAttribute("aria-busy", "false");
   $("nowPlace").textContent = `${place.emoji} ${place.name}`;
   $("nowAt").textContent = `${timeLabel(at)}の情報`;
   $("nowNote").hidden = !note;
   $("nowNote").textContent = note;
   $("retry").hidden = !note;
+  renderNow(data, now, hour);
+  renderDayList(place, data, now, hour);
+  $("sendPanel").hidden = false;
+  renderSend();
+  if (typeof renderNotifyBtn === "function") renderNotifyBtn();
+}
 
+// いまの天気：絵・気温・最高と最低・気圧とその3時間後の向き
+function renderNow(data, now, hour) {
+  const today = dayRows(data, 0, now);
+  const cur = today.find((r) => r.hour === hour) || today[0];
   if (!cur) {
     $("nowBody").innerHTML = '<p class="ls-hint">今日の情報がまだありません。電波がつながったら「もう一度」を押してね。</p>';
     $("retry").hidden = false;
-  } else {
-    const w = weatherOf(cur.code, cur.day);
-    const later = [...today, ...dayRows(data, 1, now)].find((r) => r.t > cur.t && r.hpa !== null && (Date.parse(`${r.t}:00Z`) - Date.parse(`${cur.t}:00Z`)) / 3600000 >= 3);
-    const diff = later && cur.hpa !== null ? later.hpa - cur.hpa : 0;
-    const trend = diff >= 1 ? "↗ 上がる" : diff <= -1 ? "↘ 下がる" : "→ 横ばい";
-    const lv = cur.level === null ? null : LEVELS[cur.level];
-    const info = dayInfo(data, 0, now);
-    $("nowBody").innerHTML = `
-      <div class="now-main">
-        <span class="now-emoji" aria-hidden="true">${esc(w.emoji)}</span>
-        <div>
-          <p class="now-temp">${cur.temp === null ? "—" : esc(Math.round(cur.temp))}<small>℃</small></p>
-          <p class="now-label"><span class="ls-nowrap">${esc(w.label)}</span>${info ? `<span>　最高 ${esc(deg(info.max))}／最低 ${esc(deg(info.min))}</span>` : ""}</p>
-        </div>
-      </div>
-      <div class="now-hpa">
-        <span class="level-pill" style="--c:${lv ? lv.color : "#9aa3b2"}">${lv ? esc(lv.label) : "—"}</span>
-        <span><b>${cur.hpa === null ? "—" : esc(cur.hpa.toFixed(1))}</b> hPa</span>
-        <span class="trend">${later ? `3時間後 ${esc(trend)}` : ""}</span>
-      </div>`;
+    return;
   }
+  const w = weatherOf(cur.code, cur.day);
+  const later = [...today, ...dayRows(data, 1, now)].find((r) => r.t > cur.t && r.hpa !== null && (Date.parse(`${r.t}:00Z`) - Date.parse(`${cur.t}:00Z`)) / 3600000 >= 3);
+  const diff = later && cur.hpa !== null ? later.hpa - cur.hpa : 0;
+  const trend = diff >= 1 ? "↗ 上がる" : diff <= -1 ? "↘ 下がる" : "→ 横ばい";
+  const lv = cur.level === null ? null : LEVELS[cur.level];
+  const info = dayInfo(data, 0, now);
+  $("nowBody").innerHTML = `
+    <div class="now-main">
+      <span class="now-emoji" aria-hidden="true">${esc(w.emoji)}</span>
+      <div>
+        <p class="now-temp">${cur.temp === null ? "—" : esc(Math.round(cur.temp))}<small>℃</small></p>
+        <p class="now-label"><span class="ls-nowrap">${esc(w.label)}</span>${info ? `<span>　最高 ${esc(deg(info.max))}／最低 ${esc(deg(info.min))}</span>` : ""}</p>
+      </div>
+    </div>
+    <div class="now-hpa">
+      <span class="level-pill" style="--c:${lv ? lv.color : "#9aa3b2"}">${lv ? esc(lv.label) : "—"}</span>
+      <span><b>${cur.hpa === null ? "—" : esc(cur.hpa.toFixed(1))}</b> hPa</span>
+      <span class="trend">${later ? `3時間後 ${esc(trend)}` : ""}</span>
+    </div>`;
+}
+
+// 今日・明日の札（見たい日がほかのツールから来ていれば、その日の札を一番上に）
+function renderDayList(place, data, now, hour) {
   // 見たい日（ほかのツールから）：今日・明日ならその札に印。それより先は、その日の札を一番上に（読みこむまでは案内）
   const t = targetOf(place);
   const n = t ? daysFromToday(t.date, now, data.offset) : null;
@@ -519,10 +546,6 @@ function render(place, data, at, note) {
     if (cell) list.scrollLeft = Math.max(0, cell.offsetLeft - 8);
   });
   if (t && n > 1 && n < FORECAST_MAX_DAYS && !ext) loadTargetDay(place, t);
-
-  $("sendPanel").hidden = false;
-  renderSend();
-  if (typeof renderNotifyBtn === "function") renderNotifyBtn();
 }
 
 // ---- カードで送る：送る日（今日・明日）を、カードの見本つきの札で選ぶシート ----
