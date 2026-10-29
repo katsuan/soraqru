@@ -64,7 +64,9 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .now-temp { margin: 0; font-size: 44px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .now-temp small { margin-left: 2px; font-size: 18px; }
 .now-label { margin: 4px 0 0; font-size: 15px; font-weight: 800; }
-.now-label span { color: var(--ls-subtext); font-size: 13px; font-weight: 700; white-space: nowrap; }
+.now-label > span, .now-range { color: var(--ls-subtext); font-size: 13px; font-weight: 700; }
+/* 狭い幅（320px）では「最高」と「最低」のあいだで折り返す（それぞれは途中で切らない） */
+.now-range .ls-nowrap { white-space: nowrap; }
 .now-hpa { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 12px; border-radius: 14px; background: var(--ls-surface-sub); font-size: 14px; font-weight: 700; }
 .now-hpa b { font-size: 18px; font-variant-numeric: tabular-nums; }
 .trend { color: var(--ls-subtext); }
@@ -135,7 +137,7 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .place-list li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .place-list li.ls-hint { display: block; border: 0; font-weight: 400; }
 .ls-button.is-small { min-height: 36px; padding: 4px 10px; font-size: 13px; }
-.mini { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: #8f97ad; font-size: 15px; cursor: pointer; }
+.mini { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: var(--ls-subtext); font-size: 15px; cursor: pointer; }
 .link { justify-self: start; padding: 4px 0; border: 0; background: none; color: var(--ls-subtext); font-size: 13px; text-decoration: underline; cursor: pointer; }
 .link.danger { color: var(--ls-danger, #c62828); }
 
@@ -165,3 +167,9 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 
 /* しるしの選択肢（Q キットの ls-picker の中）：候補8つとカスタム（2つぶん）を1行に */
 .emoji-items { display: contents; }
+
+/* キーボードで動かしているときの枠（Q キットの部品と同じ。指やマウスで押したときは出ない。入力欄は欄の色で見える） */
+:where(button, a[href], summary, [tabindex]):focus-visible { outline: 2px solid var(--ls-text); outline-offset: 2px; }
+/* 文字だけのボタン（「すべて消す」など）：見た目はそのまま、押せる所を上下に広げる（44px めやす） */
+.link { position: relative; }
+.link::after { content: ""; position: absolute; inset: -6px -4px; }

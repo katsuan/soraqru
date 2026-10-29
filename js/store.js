@@ -4,7 +4,7 @@
 //   here    … 前に取れた現在地（0.01 度に丸めたもの。次に開いたとき、先に前の結果を出すため）と、その地名（name。例：名古屋市中村区。わからなければ無し。named: 2 は 100m くらいの位置で調べた印）
 //   cache   … 地点ごとの天気（{ "35.17,136.88": { at（取った時刻 ms）, data } }。1時間ほどは聞きなおさない）
 // 読まれるところ：app.js・js/link.js（テストは test/soraqru.test.mjs）
-import { cleanForecast, validLatLon } from "./meteo.js?v=202610291710";
+import { cleanForecast, validLatLon } from "./meteo.js?v=202610291807";
 
 export const KEY = "soraqru:v1";
 export const MAX_PLACES = 8;

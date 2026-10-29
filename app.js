@@ -3,12 +3,12 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf, daysFromToday, FORECAST_MAX_DAYS
-} from "./js/meteo.js?v=202610291710";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, placeMark, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610291710";
-import { cardParams, dayCard } from "./js/card.js?v=202610291710";
-import { readVisit } from "./js/link.js?v=202610291710";
-import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610291710";
-import { fineLatLon, placeName } from "./js/place-name.js?v=202610291710";
+} from "./js/meteo.js?v=202610291807";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, placeMark, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610291807";
+import { cardParams, dayCard } from "./js/card.js?v=202610291807";
+import { readVisit } from "./js/link.js?v=202610291807";
+import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610291807";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202610291807";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -522,7 +522,7 @@ function renderNow(data, now, hour) {
       <span class="now-emoji" aria-hidden="true">${esc(w.emoji)}</span>
       <div>
         <p class="now-temp">${cur.temp === null ? "—" : esc(Math.round(cur.temp))}<small>℃</small></p>
-        <p class="now-label"><span class="ls-nowrap">${esc(w.label)}</span>${info ? `<span>　最高 ${esc(deg(info.max))}／最低 ${esc(deg(info.min))}</span>` : ""}</p>
+        <p class="now-label"><span class="ls-nowrap">${esc(w.label)}</span>${info ? `<span class="now-range">　<span class="ls-nowrap">最高 ${esc(deg(info.max))}</span>／<span class="ls-nowrap">最低 ${esc(deg(info.min))}</span></span>` : ""}</p>
       </div>
     </div>
     <div class="now-hpa">
