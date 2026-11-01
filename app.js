@@ -3,12 +3,12 @@
 import {
   LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
   validLatLon, weatherOf, daysFromToday, FORECAST_MAX_DAYS
-} from "./js/meteo.js?v=202610291807";
-import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, placeMark, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202610291807";
-import { cardParams, dayCard } from "./js/card.js?v=202610291807";
-import { readVisit } from "./js/link.js?v=202610291807";
-import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202610291807";
-import { fineLatLon, placeName } from "./js/place-name.js?v=202610291807";
+} from "./js/meteo.js?v=202611012034";
+import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, placeMark, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202611012034";
+import { cardParams, dayCard } from "./js/card.js?v=202611012034";
+import { readVisit } from "./js/link.js?v=202611012034";
+import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202611012034";
+import { fineLatLon, placeName } from "./js/place-name.js?v=202611012034";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -600,7 +600,7 @@ function renderSend() {
   const s = ui.shown;
   const days = PICKS.filter((p) => $(p.input).checked).map((p) => p.day);
   const btn = $("cardBtn");
-  btn.textContent = days.length ? `カードで送る（${days.length}枚）` : "送る日を選んでね";
+  btn.textContent = days.length ? `カードでおくるん（${days.length}枚）` : "送る日を選んでね";
   btn.classList.toggle("is-oqrn", Boolean(days.length)); // おくるんのマークは、送れるときだけ
   btn.classList.toggle("is-disabled", !days.length);
   btn.setAttribute("aria-disabled", String(!days.length));
@@ -717,7 +717,7 @@ function renderLegend() {
 function tip() {
   window.LineShareUI?.firstTip?.(
     "soraqru",
-    ["色の帯は、気圧の変化の目安（青＝通常 → 黄・橙 → 赤＝警戒）", "上の丸いボタンで、実家・職場などの地点を切りかえられます", "「カードで送る」で、今日・明日のまとめを渡せます"],
+    ["色の帯は、気圧の変化の目安（青＝通常 → 黄・橙 → 赤＝警戒）", "上の丸いボタンで、実家・職場などの地点を切りかえられます", "「カードでおくるん」で、今日・明日のまとめを渡せます"],
     $("days")
   );
 }
