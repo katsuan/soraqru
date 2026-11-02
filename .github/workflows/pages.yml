@@ -1,0 +1,25 @@
+# 公開：main に push したら、テストと check-code が通ったときだけ Pages に出す（中身は Q 共通の q-pages.yml）
+# ?v= は公開のときに付くので、手で付けなくてよい
+name: 公開
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  schedule:
+    - cron: "17 */3 * * *" # 3時間ごとの見回り：Q キットだけ新しくなったら出しなおす
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    uses: katsuan/line-share/.github/workflows/q-pages.yml@main
+    with:
+      folder: q-soraqru
