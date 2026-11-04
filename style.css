@@ -20,7 +20,7 @@
 
 html { background: var(--ls-bg); }
 body {
-  background: radial-gradient(circle at top right, #d3dcff, transparent 42%), var(--ls-bg);
+  background: var(--ls-bg);
   -webkit-font-smoothing: antialiased;
 }
 .ls-page { padding-bottom: calc(32px + env(safe-area-inset-bottom)); }
@@ -33,33 +33,33 @@ body {
 .search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
 .search-row .ls-input, #placeName { font-size: 16px; }
 input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
-.results { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.results { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
 .results:empty { display: none; }
 .result { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; gap: 0; min-height: 48px; text-align: left; }
 .result small { color: var(--ls-subtext); font-size: 12px; font-weight: 700; }
 .result[aria-pressed="true"] { border-color: var(--ls-accent); background: var(--ls-accent-soft); }
-.name-box { display: grid; gap: 10px; }
+.name-box { display: grid; gap: 8px; }
 .name-box[hidden] { display: none; }
-.sub-title { margin: 0; padding-top: 10px; border-top: 1px dashed var(--ls-line); font-size: 14px; font-weight: 800; }
+.sub-title { margin: 0; padding-top: 8px; border-top: 1px dashed var(--ls-line); font-size: 14px; font-weight: 800; }
 .form-actions { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
 .form-actions [hidden] { display: none; }
-.geo-note { padding: 10px 12px; border-radius: 12px; background: var(--ls-accent-soft); color: var(--ls-accent-ink); font-weight: 700; }
+.geo-note { padding: 8px 16px; border-radius: 8px; background: var(--ls-accent-soft); color: var(--ls-accent-ink); font-weight: 700; }
 .geo-note[hidden] { display: none; }
 
-.visit { display: grid; gap: 10px; }
+.visit { display: grid; gap: 8px; }
 .visit-text { margin: 0; font-weight: 700; }
 .visit .form-actions { grid-auto-flow: row; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 .visit .ls-button { white-space: nowrap; }
 
 /* いま */
-.now { display: grid; gap: 10px; }
+.now { display: grid; gap: 8px; }
 .now-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
 .now-place { overflow: hidden; margin: 0; font-size: 18px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
 .now-at { flex: 0 0 auto; color: var(--ls-subtext); font-size: 12px; font-weight: 700; }
 .now-skeleton { height: 92px; border-radius: 14px; }
 .day-skeleton { height: 150px; border-radius: 14px; }
-.wait { margin: 6px 0 0; text-align: center; white-space: pre-line; }
-.now-main { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 14px; }
+.wait { margin: 8px 0 0; white-space: pre-line; }
+.now-main { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; }
 .now-emoji { font-size: 54px; line-height: 1; }
 .now-temp { margin: 0; font-size: 44px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
 .now-temp small { margin-left: 2px; font-size: 18px; }
@@ -67,21 +67,21 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .now-label > span, .now-range { color: var(--ls-subtext); font-size: 13px; font-weight: 700; }
 /* 狭い幅（320px）では「最高」と「最低」のあいだで折り返す（それぞれは途中で切らない） */
 .now-range .ls-nowrap { white-space: nowrap; }
-.now-hpa { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 10px 12px; border-radius: 14px; background: var(--ls-surface-sub); font-size: 14px; font-weight: 700; }
+.now-hpa { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 8px 16px; border-radius: 16px; background: var(--ls-surface-sub); font-size: 14px; font-weight: 700; }
 .now-hpa b { font-size: 18px; font-variant-numeric: tabular-nums; }
 .trend { color: var(--ls-subtext); }
-.level-pill { display: inline-grid; place-items: center; min-width: 64px; min-height: 28px; padding: 0 10px; border-radius: 999px; background: var(--c); color: #1d2340; font-size: 13px; font-weight: 800; }
-.now-note { margin: 0; padding: 8px 12px; border-radius: 12px; background: #fff4d6; color: #7a5200; font-weight: 700; }
+.level-pill { display: inline-grid; place-items: center; min-width: 64px; min-height: 24px; padding: 0 8px; border-radius: 8px; background: var(--c); color: #1d2340; font-size: 13px; font-weight: 800; }
+.now-note { margin: 0; padding: 8px 16px; border-radius: 8px; background: var(--ls-surface-sub); color: var(--ls-text); font-weight: 800; }
 .now-note[hidden], #retry[hidden] { display: none; }
 
 /* 今日・明日 */
 .day { display: grid; gap: 8px; }
-.day-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 10px; }
+.day-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; }
 .day-title { margin: 0; font-size: 18px; font-weight: 800; }
 .day-title small { color: var(--ls-subtext); font-size: 13px; }
 .day-weather { margin: 0; font-size: 14px; font-weight: 700; }
-.day-weather .max { color: #d4523f; }
-.day-weather .min { color: var(--ls-accent); }
+.day-weather .max { color: var(--ls-text); }
+.day-weather .min { color: var(--ls-subtext); }
 .day-weather .pop { color: var(--ls-subtext); }
 .band-label { margin: 4px 0 0; color: var(--ls-subtext); font-size: 12px; font-weight: 800; }
 
@@ -94,8 +94,8 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .summary { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.6; white-space: pre-line; }
 
 /* 1時間ごと：横に送る */
-.hours { display: grid; grid-auto-flow: column; grid-auto-columns: 50px; gap: 4px; margin: 2px -4px 0; padding: 4px 4px 6px; overflow-x: auto; list-style: none; scroll-snap-type: x proximity; scrollbar-width: thin; }
-.hour { position: relative; display: grid; justify-items: center; gap: 2px; padding: 6px 0 0; border-radius: 12px; background: var(--ls-surface-sub); scroll-snap-align: start; overflow: hidden; }
+.hours { display: grid; grid-auto-flow: column; grid-auto-columns: 50px; gap: 4px; margin: 2px -4px 0; padding: 4px 4px 8px; overflow-x: auto; list-style: none; scroll-snap-type: x proximity; scrollbar-width: thin; }
+.hour { position: relative; display: grid; justify-items: center; gap: 2px; padding: 8px 0 0; border-radius: 8px; background: var(--ls-surface-sub); scroll-snap-align: start; overflow: hidden; }
 .hour.is-past { opacity: 0.5; }
 .hour.is-now { box-shadow: inset 0 0 0 2px var(--ls-accent); }
 .hour .h { color: var(--ls-subtext); font-size: 11px; font-weight: 800; }
@@ -107,14 +107,14 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* 色の意味 */
-.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 0; list-style: none; font-size: 14px; font-weight: 700; }
-.legend li { display: flex; align-items: center; gap: 6px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 0; padding: 0; list-style: none; font-size: 14px; font-weight: 700; }
+.legend li { display: flex; align-items: center; gap: 8px; }
 .dot { width: 18px; height: 12px; border-radius: 3px; background: var(--c); }
 
 /* 送る */
 /* カードで送る：送る日を選ぶシート（さくせん盤の送る画面と同じ形）。今日・明日の札を横に2つ。ボタンと説明は下に全幅 */
 .card-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; gap: 8px; }
-.pick { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; align-items: center; gap: 6px; padding: 8px; border: 2px solid var(--ls-line); border-radius: 16px; background: var(--ls-surface); cursor: pointer; }
+.pick { display: grid; grid-template-columns: auto minmax(0, 1fr); align-content: start; align-items: center; gap: 8px; padding: 8px; border: 2px solid var(--ls-line); border-radius: 16px; background: var(--ls-surface); cursor: pointer; }
 .pick:has(input:checked) { border-color: var(--ls-accent); background: var(--ls-accent-soft); }
 .pick input { width: 20px; height: 20px; margin: 0; accent-color: var(--ls-accent); }
 .pick > b { font-size: 14px; }
@@ -133,24 +133,22 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 
 /* 覚えた地点 */
 .place-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; }
-.place-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 6px; min-height: 44px; border-bottom: 1px dashed var(--ls-line); font-weight: 700; }
+.place-list li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 8px; min-height: 44px; border-bottom: 1px dashed var(--ls-line); font-weight: 700; }
 .place-list li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .place-list li.ls-hint { display: block; border: 0; font-weight: 400; }
-.ls-button.is-small { min-height: 36px; padding: 4px 10px; font-size: 13px; }
+.ls-button.is-small { min-height: 40px; padding: 4px 8px; font-size: 13px; }
 .mini { width: 44px; height: 44px; border: 0; border-radius: 50%; background: none; color: var(--ls-subtext); font-size: 15px; cursor: pointer; }
 .link { justify-self: start; padding: 4px 0; border: 0; background: none; color: var(--ls-subtext); font-size: 13px; text-decoration: underline; cursor: pointer; }
 .link.danger { color: var(--ls-danger, #c62828); }
 
-.credit { margin: 4px 0 0; color: var(--ls-subtext); font-size: 12px; text-align: center; }
+.credit { margin: 8px 0 0; color: var(--ls-subtext); font-size: 12px; }
 .credit a { color: inherit; }
 .status { min-height: 1.2em; margin: 0; color: var(--ls-accent-ink); font-size: 14px; font-weight: 700; }
 .status:empty { display: none; }
 
 @media (prefers-color-scheme: dark) {
   :root[data-ls-dark="auto"] { --ls-accent: #6f86f0; --ls-accent-ink: #a9b8ff; --ls-accent-soft: rgba(111, 134, 240, 0.18); --past: 0.45; }
-  :root[data-ls-dark="auto"], :root[data-ls-dark="auto"] body { background: radial-gradient(circle at top right, rgba(80, 100, 220, 0.22), transparent 42%), var(--ls-bg); }
-  :root[data-ls-dark="auto"] .now-note { background: rgba(255, 196, 64, 0.16); color: #ffd27a; }
-  :root[data-ls-dark="auto"] .day-weather .max { color: #ff8a78; }
+  :root[data-ls-dark="auto"], :root[data-ls-dark="auto"] body { background: var(--ls-bg); }
   :root[data-ls-dark="auto"] .cell.is-now { outline-color: #fff; }
 }
 
@@ -160,7 +158,7 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 
 /* 見たい日（ほかのツールから開いたとき）：予定の日の札・時刻の印 */
 .target-day { border: 2px solid var(--ls-accent); }
-.target-badge { display: inline-block; margin-left: 8px; padding: 2px 8px; border-radius: 999px; background: var(--ls-accent-soft); color: var(--ls-accent-ink); font-size: 12px; font-weight: 800; vertical-align: 2px; white-space: nowrap; }
+.target-badge { display: inline-block; margin-left: 8px; color: var(--ls-accent-ink); font-size: 13px; font-weight: 800; white-space: nowrap; }
 .cell.is-target { outline: 3px solid var(--ls-accent); outline-offset: 1px; z-index: 1; }
 .hour.is-target { box-shadow: inset 0 0 0 3px var(--ls-accent); background: var(--ls-accent-soft); }
 .hour.is-target .h { color: var(--ls-accent-ink); }
