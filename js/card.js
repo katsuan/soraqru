@@ -5,6 +5,8 @@ import { openUrl } from "./link.js?v=202611012034";
 
 export const CARD_COLOR = "#3A56D6"; // ロゴの群青
 export const CREDIT = "天気データ：Open-Meteo.com（CC BY 4.0）";
+// 現在地の地名を国土地理院で調べたときの出どころ（カードでは天気の出どころの次の行に）
+export const PLACE_CREDIT = "現在地の地名：国土地理院";
 const DETAIL_MAX = 300;
 
 /** 1日ぶんの文（カードと画面で同じ言い方） */
@@ -31,7 +33,9 @@ export function dayCard(place, data, index, now = new Date()) {
   const key = addDays(localYmd(now, data.offset), index);
   const day = index ? "明日" : "今日";
   let detail = dayText(data, index, now).replace(/^【[^】]*】\n/, "") || "この日の情報がまだありません";
-  const tail = `\n\n気圧は3時間の変わり方から出した目安です。\n${CREDIT}`;
+  // 出どころは1つずつ1行に。現在地の地名を国土地理院で調べたとき（named: 2）だけ、地名の出どころも
+  const credits = [CREDIT, ...(place?.id === "here" && place?.named === 2 ? [PLACE_CREDIT] : [])];
+  const tail = `\n\n気圧は3時間の変わり方から出した目安です。\n${credits.join("\n")}`;
   if ([...detail].length + [...tail].length > DETAIL_MAX) detail = [...detail].slice(0, DETAIL_MAX - [...tail].length - 1).join("") + "…";
   return new URLSearchParams({
     headerTitle: `🌤️ ${day}の空のごきげん`,

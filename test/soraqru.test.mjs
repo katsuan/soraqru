@@ -284,6 +284,10 @@ test("カード：1日1枚。今日と明日は2枚（2枚目は card=）・今�
   const today = p.get("detail");
   assert.match(today, /^🌧️ 雨 22°\/14° ☔60%\n🌀 気圧（10時から）\n・15〜20時 警戒（下がる）\n\n/);
   assert.match(today, /天気データ：Open-Meteo\.com（CC BY 4\.0）$/);
+  // 現在地の地名を国土地理院で調べたときだけ、地名の出どころを次の行に
+  const here = C.cardParams({ id: "here", name: "名古屋市中村区", named: 2, lat: 35.17, lon: 136.88, src: "gps" }, data, NOW, [0]).get("detail");
+  assert.match(here, /天気データ：Open-Meteo\.com（CC BY 4\.0）\n現在地の地名：国土地理院$/);
+  assert.ok([...here].length <= 300);
   assert.doesNotMatch(today, /頭痛/);
   assert.equal(p.get("actionUrl"), "https://katsuan.github.io/soraqru/?at=35.18%2C136.91&name=%E5%90%8D%E5%8F%A4%E5%B1%8B");
   // 2枚目（明日）
