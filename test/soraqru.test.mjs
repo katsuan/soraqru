@@ -13,6 +13,7 @@ import * as S from "../js/store.js";
 import * as C from "../js/card.js";
 import * as L from "../js/link.js";
 import * as P from "../js/place-name.js";
+import * as V from "../js/day-view.js";
 
 const require = createRequire(import.meta.url);
 const OQRN = path.join(os.homedir(), "GitHub/q-oqrn");
@@ -518,3 +519,32 @@ test("日の出・日の入り：その地点の時刻で \"6:05\"。形がち�
   assert.equal(M.cleanForecast({ ...data, days: [{ date: "2026-10-23", sunrise: "<b>" }] }).days[0].sunrise, null);
 });
 
+
+// ---- 1日ぶんの札（js/day-view.js） ----
+
+test("1日ぶんの札：日の出・日の入りの札は、その時間の札のすぐあと。今日の過ぎたものはうすく", () => {
+  const data = M.parseForecast(sample(), NOW); // NOW はその地点の 10時台。日の出 6:05・日の入り 17:12
+  const today = V.dayHtml(data, 0, NOW, 10);
+  const marks = [...today.matchAll(/<li class="hour( [^"]*)?"><span class="h">([^<]+)<\/span>/g)].map((m) => `${m[2]}${m[1] || ""}`);
+  assert.deepEqual(marks.slice(5, 9), ["5時 is-past", "6時 is-past", "日の出 sun-mark is-past", "7時 is-past"]);
+  assert.ok(marks.includes("いま is-now"));
+  const sunset = marks.indexOf("日の入り sun-mark");
+  assert.equal(marks[sunset - 1], "17時");
+  // 明日の札は、どれもうすくしない。「いま」もない
+  const tomorrow = V.dayHtml(data, 1, NOW, 10);
+  assert.doesNotMatch(tomorrow, /is-past|is-now|いま</);
+  assert.match(tomorrow, /日の出 6:06/);
+});
+
+test("1日ぶんの札：見たい日の印（今日・明日は「予定・15時」、先の日は「15時ごろ」）と、情報がない日", () => {
+  const data = M.parseForecast(sample(), NOW);
+  assert.match(V.dayHtml(data, 1, NOW, 10, { date: "2026-10-24", hour: 15 }), /<span class="target-badge"><span class="ls-icon" data-icon="calendar" aria-hidden="true"><\/span>予定・15時<\/span>/);
+  assert.match(V.dayHtml(data, 1, NOW, 10, { date: "2026-10-24", hour: 15 }), /class="cell is-target"/);
+  assert.match(V.dayHtml(data, 2, NOW, 10, { date: "2026-10-25", hour: 15 }), /target-day[\s\S]*予定の日[\s\S]*15時ごろ/);
+  assert.match(V.dayHtml(data, 5, NOW, 10), /この日の情報がまだありません/);
+  assert.match(V.targetNoteHtml({ date: "2026-10-01", hour: null }, -1), /もう過ぎています/);
+  assert.match(V.targetNoteHtml({ date: "2026-12-01", hour: 9 }, 20), /16日前ごろから見られます/);
+  // 地点の名前などは、そのまま HTML に入らない
+  assert.equal(V.esc(`<b a="1">&'`), "&lt;b a=&quot;1&quot;&gt;&amp;&#39;");
+  assert.equal(V.legendHtml().match(/<li>/g).length, 4);
+});

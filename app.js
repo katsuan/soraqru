@@ -1,7 +1,7 @@
 // そらくる（SoraQru）：画面の操作。天気は Open-Meteo だけ（js/meteo.js）、地点と結果はこの端末の中だけ（js/store.js）
 // 読まれるところ：index.html（画面の入口。部品は js/ から読む）
 import {
-  LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, forecastUrl, geocodeUrls, localHour, localYmd, addDays, parseForecast, parseGeocode,
+  LEVELS, dayInfo, dayLabel, dayRows, deg, forecastUrl, geocodeUrls, localHour, parseForecast, parseGeocode,
   validLatLon, weatherOf, daysFromToday, FORECAST_MAX_DAYS
 } from "./js/meteo.js?v=202611012034";
 import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, placeMark, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202611012034";
@@ -9,6 +9,7 @@ import { cardParams, dayCard } from "./js/card.js?v=202611012034";
 import { readVisit } from "./js/link.js?v=202611012034";
 import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202611012034";
 import { fineLatLon, placeName } from "./js/place-name.js?v=202611012034";
+import { dayHtml, esc, iconHtml, legendHtml, targetNoteHtml } from "./js/day-view.js?v=202611012034";
 
 const $ = (id) => document.getElementById(id);
 const FETCH_TIMEOUT_MS = 10000;
@@ -23,10 +24,6 @@ const ui = {
   seq: 0
 };
 
-// 文字を HTML に入れられる形にする（& < > " ' を置きかえる）
-const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-// Q キットの線アイコン（HTML の文字で。名前は Q キットの kit.html の「線アイコン」）
-const iconHtml = (name) => `<span class="ls-icon" data-icon="${name}" aria-hidden="true"></span>`;
 
 // いまの地点・天気を端末に残す。残せなかったら知らせる
 function persist() {
@@ -45,6 +42,11 @@ function say(text, undo) {
   $("status").textContent = text;
   clearTimeout(say.timer);
   if (text) say.timer = setTimeout(() => ($("status").textContent = ""), 3500);
+}
+
+// いまの天気の見出し（しるしと名前）
+function setPlaceTitle(place) {
+  $("nowPlace").textContent = `${place.emoji} ${place.name}`;
 }
 
 // いま見ている地点（visit・現在地・覚えた地点）。現在地は { id: "here" }
@@ -195,15 +197,24 @@ function pickPlace(p) {
   $("placeName").focus();
 }
 
-$("savePlace").addEventListener("click", () => {
-  if (!ui.picked) return;
-  const place = addPlace(state, { ...ui.picked, name: $("placeName").value || ui.picked.name, emoji: ui.emoji });
-  if (!place) return say(`地点は ${MAX_PLACES} か所までです`);
+// 地点を覚えて、その地点を出す（いっぱいなら知らせて false）。before は覚える前に閉じるもの
+function rememberPlace(input, before) {
+  const place = addPlace(state, input);
+  if (!place) {
+    say(`地点は ${MAX_PLACES} か所までです`);
+    return false;
+  }
+  before();
   state.current = place.id;
   persist();
-  closeAdd();
   say(cheer(`${place.emoji} ${place.name} を覚えました`));
   show();
+  return true;
+}
+
+$("savePlace").addEventListener("click", () => {
+  if (!ui.picked) return;
+  rememberPlace({ ...ui.picked, name: $("placeName").value || ui.picked.name, emoji: ui.emoji }, closeAdd);
 });
 
 $("useHere").addEventListener("click", async () => {
@@ -216,15 +227,7 @@ $("useHere").addEventListener("click", async () => {
 });
 
 // 受けとった地点を覚える
-$("visitSave").addEventListener("click", () => {
-  const place = addPlace(state, { ...ui.visit, emoji: "📍" });
-  if (!place) return say(`地点は ${MAX_PLACES} か所までです`);
-  leaveVisit();
-  state.current = place.id;
-  persist();
-  say(cheer(`${place.emoji} ${place.name} を覚えました`));
-  show();
-});
+$("visitSave").addEventListener("click", () => rememberPlace({ ...ui.visit, emoji: "📍" }, leaveVisit));
 $("visitClose").addEventListener("click", () => {
   leaveVisit();
   show();
@@ -244,7 +247,7 @@ $("placeList").addEventListener("click", async (e) => {
     renderPlaceBar();
     if (ui.shown && ui.shown.place.id === p.id) {
       ui.shown.place = p;
-      $("nowPlace").textContent = `${p.emoji} ${p.name}`;
+      setPlaceTitle(p);
       renderSend();
     }
     return;
@@ -335,7 +338,7 @@ async function show() {
   renderVisitHead();
   if (!(await findVisitPlace(seq))) return;
   const place = currentPlace();
-  $("nowPlace").textContent = `${place.emoji} ${place.name}`;
+  setPlaceTitle(place);
   if (place.id === "here") return showHere(place, seq);
   await loadFor(place, seq);
 }
@@ -415,7 +418,7 @@ async function nameHere(ll) {
   state.here.name = name;
   state.here.named = 2;
   persist();
-  if (state.current === "here" && !ui.visit) $("nowPlace").textContent = `📍 ${name}`;
+  if (state.current === "here" && !ui.visit) setPlaceTitle(currentPlace());
 }
 
 // その地点の天気を出す（覚えた結果を先に出し、古ければ聞きなおす）
@@ -492,7 +495,7 @@ function render(place, data, at, note) {
   const now = new Date();
   const hour = localHour(now, data.offset);
   $("nowPanel").setAttribute("aria-busy", "false");
-  $("nowPlace").textContent = `${place.emoji} ${place.name}`;
+  setPlaceTitle(place);
   $("nowAt").textContent = `${timeLabel(at)}の情報`;
   $("nowNote").hidden = !note;
   $("nowNote").textContent = note;
@@ -501,7 +504,7 @@ function render(place, data, at, note) {
   renderDayList(place, data, now, hour);
   $("sendPanel").hidden = false;
   renderSend();
-  if (typeof renderNotifyBtn === "function") renderNotifyBtn();
+  renderNotifyBtn();
 }
 
 // いまの天気：絵・気温・最高と最低・気圧とその3時間後の向き
@@ -655,82 +658,9 @@ async function loadTargetDay(place, t) {
   }
 }
 
-// 見たい日の案内の HTML（過ぎた・まだ先・読みこみ中）。n はきょうから何日先か
-function targetNoteHtml(t, n) {
-  const when = `${dayLabel(t.date)}${t.hour === null ? "" : ` ${t.hour}時ごろ`}`;
-  const text = n < 0
-    ? `${when}は、もう過ぎています。`
-    : n >= FORECAST_MAX_DAYS
-      ? `${when}の天気は、${FORECAST_MAX_DAYS}日前ごろから見られます。近くなったら、もう一度開いてね。`
-      : `${when}の天気を読みこんでいます…`;
-  return `<section class="ls-panel day target-day"><h2 class="day-title"><span class="ls-icon" data-icon="calendar" aria-hidden="true"></span>予定の日 <small>${esc(dayLabel(t.date))}</small></h2><p class="ls-hint">${esc(text)}</p></section>`;
-}
-
-// 日の出・日の入りの行（わからない日は出さない）
-function sunHtml(info) {
-  const part = (icon, label, time) => (time ? `<span class="ls-nowrap"><span class="ls-icon" data-icon="${icon}" aria-hidden="true"></span>${label} ${esc(time)}</span>` : "");
-  const parts = [part("sunrise", "日の出", info?.sunrise), part("sunset", "日の入り", info?.sunset)].filter(Boolean);
-  return parts.length ? `<p class="day-sun">${parts.join(" ")}</p>` : "";
-}
-
-// 1日ぶん（今日・明日・見たい日）の天気の HTML（気圧の帯・1時間ごと）
-function dayHtml(data, index, now, hour, target = null) {
-  const rows = dayRows(data, index, now);
-  const key = addDays(localYmd(now, data.offset), index);
-  const info = dayInfo(data, index, now);
-  const title = index === 0 ? "今日" : index === 1 ? "明日" : `<span class="ls-icon" data-icon="calendar" aria-hidden="true"></span>予定の日`;
-  const th = target ? target.hour : null;
-  const badge = !target ? "" : index > 1 ? (th === null ? "" : `<span class="target-badge">${th}時ごろ</span>`) : `<span class="target-badge"><span class="ls-icon" data-icon="calendar" aria-hidden="true"></span>予定${th === null ? "" : `・${th}時`}</span>`;
-  if (!rows.length) {
-    return `<section class="ls-panel day"><h2 class="day-title">${title} <small>${esc(dayLabel(key))}</small>${badge}</h2><p class="ls-hint">この日の情報がまだありません。</p></section>`;
-  }
-  const w = weatherOf(info?.code, 1);
-  const summary = daySummary(rows, 4, "1日を通して 通常", "\n") || "気圧の情報がありません";
-  const byHour = new Map(rows.map((r) => [r.hour, r]));
-  const cells = Array.from({ length: 24 }, (_, h) => {
-    const r = byHour.get(h);
-    const lv = r && r.level !== null ? LEVELS[r.level] : null;
-    const past = index === 0 && h < hour;
-    const nowMark = index === 0 && h === hour;
-    const title = `${h}時 ${lv ? lv.label : "—"}${r && r.drop !== null && r.drop > 0 ? `（6時間で ${r.drop.toFixed(1)} hPa 下がる）` : ""}`;
-    return `<span class="cell${past ? " is-past" : ""}${nowMark ? " is-now" : ""}${th === h ? " is-target" : ""}" style="--c:${lv ? lv.color : "transparent"}" title="${esc(title)}"></span>`;
-  }).join("");
-  // 日の出・日の入りの札（その時間の札のすぐあとに入れる。今日の、もう過ぎたものはうすく）
-  const nowMin = index === 0 ? localHour(now, data.offset) * 60 + new Date(now.getTime() + data.offset * 1000).getUTCMinutes() : -1;
-  const sunCards = [["sunrise", "日の出", info?.sunrise], ["sunset", "日の入り", info?.sunset]]
-    .filter(([, , time]) => time)
-    .map(([icon, label, time]) => {
-      const [hh, mm] = time.split(":").map(Number);
-      const past = index === 0 && hh * 60 + mm < nowMin ? " is-past" : "";
-      return { hour: hh, html: `<li class="hour sun-mark${past}"><span class="h">${label}</span><span class="ls-icon" data-icon="${icon}" aria-hidden="true"></span><span class="t">${esc(time)}</span></li>` };
-    });
-  const hours = rows
-    .map((r) => {
-      const ww = weatherOf(r.code, r.day);
-      const lv = r.level === null ? null : LEVELS[r.level];
-      const cls = (index === 0 && r.hour < hour ? " is-past" : index === 0 && r.hour === hour ? " is-now" : "") + (th === r.hour ? " is-target" : "");
-      const card = `<li class="hour${cls}"><span class="h">${index === 0 && r.hour === hour ? "いま" : `${r.hour}時`}</span><span class="e" aria-hidden="true">${esc(ww.emoji)}</span><span class="t">${r.temp === null ? "—" : esc(Math.round(r.temp))}°</span><span class="p" style="--c:${lv ? lv.color : "transparent"}">${r.pop === null ? "" : `${esc(r.pop)}%`}</span><span class="sr">${esc(ww.label)}・気圧 ${lv ? esc(lv.label) : "—"}</span></li>`;
-      return card + sunCards.filter((c) => c.hour === r.hour).map((c) => c.html).join("");
-    })
-    .join("");
-  return `
-  <section class="ls-panel day${index > 1 ? " target-day" : ""}" aria-label="${title}">
-    <div class="day-head">
-      <h2 class="day-title">${title} <small>${esc(dayLabel(key))}</small>${badge}</h2>
-      <p class="day-weather"><span aria-hidden="true">${esc(w.emoji)}</span> <span class="ls-nowrap">${esc(w.label)}</span> <b class="max">${esc(deg(info?.max))}</b>/<b class="min">${esc(deg(info?.min))}</b>${info?.pop === null || info?.pop === undefined ? "" : ` <span class="pop">☔${esc(Math.round(info.pop))}%</span>`}</p>
-      ${sunHtml(info)}
-    </div>
-    <p class="band-label">気圧の変化の目安</p>
-    <div class="band" role="img" aria-label="${esc(`気圧の変化の目安：${summary.replace(/\n/g, "、")}`)}">${cells}</div>
-    <div class="axis" aria-hidden="true"><span>0</span><span>6</span><span>12</span><span>18</span><span>24時</span></div>
-    <p class="summary">${esc(summary)}</p>
-    <ol class="hours" aria-label="1時間ごとの天気">${hours}</ol>
-  </section>`;
-}
-
 // 気圧の色の見本を描く
 function renderLegend() {
-  document.querySelector(".legend").innerHTML = LEVELS.map((l) => `<li><span class="dot" style="--c:${l.color}"></span>${esc(l.label)}</li>`).join("");
+  document.querySelector(".legend").innerHTML = legendHtml();
 }
 
 // ---- はじめての人に（1回だけ） ----
