@@ -108,7 +108,7 @@
 
   <div class="ls-folds">
     <details class="ls-fold" id="aboutFold">
-      <summary><span class="ls-fold-icon" aria-hidden="true">🌀</span>気圧の変化の目安について</summary>
+      <summary><span class="ls-fold-icon ls-icon" data-icon="gauge" aria-hidden="true"></span>気圧の変化の目安について</summary>
       <div class="ls-fold-body">
         <ul class="legend" aria-label="色の意味"></ul>
         <p class="ls-hint">3時間前とくらべて、気圧がどれだけ変わるか（上がっても下がっても）で4つに分けています。1 hPa 未満＝通常、2 hPa 未満＝やや注意、3 hPa 未満＝注意、それ以上＝警戒。</p>
@@ -118,7 +118,7 @@
 
     <!-- 天気の知らせ（くらぶボット）。確かめがすむまで出さない（?preview=notify で開いたときだけ app.js が出す） -->
     <details class="ls-fold" id="notifyFold" hidden>
-      <summary><span class="ls-fold-icon" aria-hidden="true">🔔</span>天気の知らせを LINE で受けとる（くわしい人向け）</summary>
+      <summary><span class="ls-fold-icon ls-icon" data-icon="bell" aria-hidden="true"></span>天気の知らせを LINE で受けとる（くわしい人向け）</summary>
       <div class="ls-fold-body">
         <p class="ls-hint">雨・気圧の変化・気温の大きな変わり目がある日だけ、決めた時間に知らせるボットを、自分で持てます。くらぶのツール共通の「くらぶボット」の、☁️ 天気の機能です。配布用のシートをコピーして、自分の公式アカウントとつなぎます（30分くらい・無料）。</p>
         <a class="ls-button is-block" href="https://katsuan.github.io/qlove-bot/docs/setup.html" target="_blank" rel="noopener"><span class="ls-icon" data-icon="notebook" aria-hidden="true"></span>つなぎ方を見る</a>
@@ -134,7 +134,7 @@
     </details>
 
     <details class="ls-fold" id="placesFold">
-      <summary><span class="ls-fold-icon" aria-hidden="true">🔒</span>覚えた地点<span id="placesMeta" class="ls-fold-meta"></span></summary>
+      <summary><span class="ls-fold-icon ls-icon" data-icon="lock" aria-hidden="true"></span>覚えた地点<span id="placesMeta" class="ls-fold-meta"></span></summary>
       <div class="ls-fold-body">
         <p class="ls-hint">地点と天気の結果は、この端末（ブラウザ）の中だけに残します。現在地は 1km くらいに丸めて覚えます。地名（市区町村）を調べるときだけ、100m くらいに丸めた位置を国土地理院に送ります（残しません）。</p>
         <ul id="placeList" class="place-list"></ul>

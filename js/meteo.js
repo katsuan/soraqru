@@ -54,7 +54,7 @@ export function forecastUrl(lat, lon, days = 3) {
     latitude: roundCoord(lat).toFixed(2),
     longitude: roundCoord(lon).toFixed(2),
     hourly: "pressure_msl,temperature_2m,weather_code,precipitation_probability,is_day",
-    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max",
+    daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset",
     timezone: "auto",
     // 0時の「3時間の変わり方」に前の日の夜が要る
     past_days: "1",
@@ -65,7 +65,8 @@ export function forecastUrl(lat, lon, days = 3) {
 
 /**
  * Open-Meteo の返事 → そらくるの形。読めないとき（壊れた・欠けた返事）は null
- *   { offset（その地点の UTC からのずれ・秒）, hours: [{ t, hpa, temp, code, pop, day, level, change }], days: [{ date, code, max, min, pop }] }
+ *   { offset（その地点の UTC からのずれ・秒）, hours: [{ t, hpa, temp, code, pop, day, level, change }], days: [{ date, code, max, min, pop, sunrise, sunset }] }
+ *   sunrise・sunset はその地点の時刻（"6:05"）。わからなければ null
  * hours は今日の0時から 72 時間まで。level は3時間前（時刻で探す）とくらべた段階（どちらかの気圧がない時間は null）
  */
 export function parseForecast(json, now = new Date(), maxHours = HOURS_KEEP) {
@@ -120,12 +121,16 @@ function parseDays(daily, hours) {
     const pops = rows.map((r) => r.pop).filter((v) => v !== null);
     // 日ごとの値があればそれ、なければ fallback
     const pick = (name, fallback) => (i >= 0 && finite(col(name)[i]) !== null ? finite(col(name)[i]) : fallback);
+    // 日の出・日の入り（"2026-10-23T06:05" → "6:05"。その日の時刻でなければ null）
+    const sun = (name) => (i >= 0 ? sunTime(col(name)[i], date) : null);
     return {
       date,
       code: pick("weather_code", worstCode(rows.filter((r) => r.day).map((r) => r.code))),
       max: pick("temperature_2m_max", temps.length ? Math.max(...temps) : null),
       min: pick("temperature_2m_min", temps.length ? Math.min(...temps) : null),
-      pop: pick("precipitation_probability_max", pops.length ? Math.max(...pops) : null)
+      pop: pick("precipitation_probability_max", pops.length ? Math.max(...pops) : null),
+      sunrise: sun("sunrise"),
+      sunset: sun("sunset")
     };
   });
 }
@@ -151,8 +156,19 @@ export function cleanForecast(v) {
   const days = v.days
     .slice(0, 4)
     .filter((d) => d && typeof d === "object" && typeof d.date === "string" && DATE.test(d.date))
-    .map((d) => ({ date: d.date, code: num(d.code), max: num(d.max), min: num(d.min), pop: num(d.pop) }));
+    .map((d) => ({ date: d.date, code: num(d.code), max: num(d.max), min: num(d.min), pop: num(d.pop), sunrise: hm(d.sunrise), sunset: hm(d.sunset) }));
   return { offset, hours, days };
+}
+
+// Open-Meteo の日の出・日の入り（"YYYY-MM-DDTHH:MM"）→ "6:05"。その日（date）の時刻でなければ null
+function sunTime(v, date) {
+  const m = typeof v === "string" ? /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})$/.exec(v) : null;
+  if (!m || m[1] !== date || Number(m[2]) > 23 || Number(m[3]) > 59) return null;
+  return `${Number(m[2])}:${m[3]}`;
+}
+// 覚えた時刻（"6:05"）を確かめる。ちがえば null
+function hm(v) {
+  return typeof v === "string" && /^(?:[01]?\d|2[0-3]):[0-5]\d$/.test(v) ? v : null;
 }
 
 /** その地点の今の日付（"YYYY-MM-DD"）と時刻（0〜23） */

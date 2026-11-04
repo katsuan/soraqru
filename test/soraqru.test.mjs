@@ -46,7 +46,9 @@ function sample({ pressure = () => 1013, offset = 32400 } = {}) {
       weather_code: [1, 61, 3, 0],
       temperature_2m_max: [20, 22.4, 19, 18],
       temperature_2m_min: [10, 13.6, 12, 9],
-      precipitation_probability_max: [0, 60, 30, 10]
+      precipitation_probability_max: [0, 60, 30, 10],
+      sunrise: ["2026-10-22T06:04", "2026-10-23T06:05", "2026-10-24T06:06", "bad"],
+      sunset: ["2026-10-22T17:13", "2026-10-23T17:12", "2026-10-24T17:11", "2026-10-24T17:10"]
     }
   };
 }
@@ -94,7 +96,7 @@ test("返事を読む：今日の0時から、その地点の時刻で", () => {
   assert.equal(data.hours.length, 72);
   assert.equal(M.localHour(NOW, data.offset), 10);
   const info = M.dayInfo(data, 0, NOW);
-  assert.deepEqual(info, { date: "2026-10-23", code: 61, max: 22.4, min: 13.6, pop: 60 });
+  assert.deepEqual(info, { date: "2026-10-23", code: 61, max: 22.4, min: 13.6, pop: 60, sunrise: "6:05", sunset: "17:12" });
   assert.equal(M.dayRows(data, 1, NOW)[0].t, "2026-10-24T00:00");
   assert.equal(M.dayLabel("2026-10-23"), "10/23（金）");
 });
@@ -150,6 +152,7 @@ test("聞く URL：Open-Meteo だけ・場所は 0.01 度に丸める", () => {
   assert.equal(url.searchParams.get("latitude"), "35.17");
   assert.equal(url.searchParams.get("longitude"), "136.88");
   assert.equal(url.searchParams.get("past_days"), "1");
+  assert.match(url.searchParams.get("daily"), /sunrise,sunset/);
   assert.equal(M.validLatLon(91, 0), null);
   assert.equal(M.validLatLon("x", 0), null);
 });
@@ -482,3 +485,17 @@ test("くらぶボットとつなぐ欄の名前は、ほかのツール（つ�
   assert.match(html, /<p class="sub-title">🔗 くらぶボットとつなぐ<\/p>/);
   assert.doesNotMatch(html, /⚙️ くらぶボットとつなぐ/);
 });
+
+test("日の出・日の入り：その地点の時刻で \"6:05\"。形がちがう・ほかの日の時刻は使わない。覚えた天気からも読める", () => {
+  const data = M.parseForecast(sample(), NOW);
+  const d = Object.fromEntries(data.days.map((x) => [x.date, x]));
+  assert.equal(d["2026-10-23"].sunrise, "6:05");
+  assert.equal(d["2026-10-23"].sunset, "17:12");
+  assert.equal(d["2026-10-25"].sunrise, null);
+  assert.equal(d["2026-10-25"].sunset, null);
+  const back = M.cleanForecast(JSON.parse(JSON.stringify(data)));
+  assert.equal(back.days.find((x) => x.date === "2026-10-23").sunrise, "6:05");
+  // 前の形（日の出なし）や、こわれた値は null
+  assert.equal(M.cleanForecast({ ...data, days: [{ date: "2026-10-23", sunrise: "<b>" }] }).days[0].sunrise, null);
+});
+

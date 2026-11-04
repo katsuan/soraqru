@@ -172,3 +172,14 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 /* 文字だけのボタン（「すべて消す」など）：見た目はそのまま、押せる所を上下に広げる（44px めやす） */
 .link { position: relative; }
 .link::after { content: ""; position: absolute; inset: -6px -4px; }
+
+/* 線アイコン（Q キットの .ls-icon）と字の間 */
+.day-title .ls-icon, .target-badge .ls-icon { margin-right: var(--ls-space-xs); }
+/* そらくるだけで使う線アイコン（Q キットにまだない形：気圧のメーター・日の出・日の入り。Lucide の gauge・sunrise・sunset と同じ形）。Q キットと同じ 24 の枠・線の太さ 2 */
+.ls-icon[data-icon="gauge"] { --ls-i: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22m12 14 4-4%22/%3E%3Cpath d=%22M3.34 19a10 10 0 1 1 17.32 0%22/%3E%3C/svg%3E"); }
+.ls-icon[data-icon="sunrise"] { --ls-i: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 2v8%22/%3E%3Cpath d=%22m4.93 10.93 1.41 1.41%22/%3E%3Cpath d=%22M2 18h2%22/%3E%3Cpath d=%22M20 18h2%22/%3E%3Cpath d=%22m19.07 10.93-1.41 1.41%22/%3E%3Cpath d=%22M22 22H2%22/%3E%3Cpath d=%22M16 18a4 4 0 0 0-8 0%22/%3E%3Cpath d=%22m8 6 4-4 4 4%22/%3E%3C/svg%3E"); }
+.ls-icon[data-icon="sunset"] { --ls-i: url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23000%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22%3E%3Cpath d=%22M12 10V2%22/%3E%3Cpath d=%22m4.93 10.93 1.41 1.41%22/%3E%3Cpath d=%22M2 18h2%22/%3E%3Cpath d=%22M20 18h2%22/%3E%3Cpath d=%22m19.07 10.93-1.41 1.41%22/%3E%3Cpath d=%22M22 22H2%22/%3E%3Cpath d=%22M16 18a4 4 0 0 0-8 0%22/%3E%3Cpath d=%22m16 6-4 4-4-4%22/%3E%3C/svg%3E"); }
+/* 日の出・日の入りの行（天気の行の下に、うすい字で） */
+.day-sun { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: var(--ls-space-xs) var(--ls-space-m); margin: 0; color: var(--ls-subtext); font-size: 13px; }
+.day-sun .ls-icon { margin-right: var(--ls-space-xs); }
+

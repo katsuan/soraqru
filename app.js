@@ -257,7 +257,7 @@ $("placeList").addEventListener("click", async (e) => {
   persist();
   if (wasCurrent) show();
   else renderPlaceBar();
-  say(`🗑 ${undo.place.name} を消しました`, () => {
+  say(`${undo.place.name} を消しました`, () => {
     restorePlace(state, undo);
     if (wasCurrent) state.current = undo.place.id;
     persist();
@@ -663,7 +663,14 @@ function targetNoteHtml(t, n) {
     : n >= FORECAST_MAX_DAYS
       ? `${when}の天気は、${FORECAST_MAX_DAYS}日前ごろから見られます。近くなったら、もう一度開いてね。`
       : `${when}の天気を読みこんでいます…`;
-  return `<section class="ls-panel day target-day"><h2 class="day-title">📅 予定の日 <small>${esc(dayLabel(t.date))}</small></h2><p class="ls-hint">${esc(text)}</p></section>`;
+  return `<section class="ls-panel day target-day"><h2 class="day-title"><span class="ls-icon" data-icon="calendar" aria-hidden="true"></span>予定の日 <small>${esc(dayLabel(t.date))}</small></h2><p class="ls-hint">${esc(text)}</p></section>`;
+}
+
+// 日の出・日の入りの行（わからない日は出さない）
+function sunHtml(info) {
+  const part = (icon, label, time) => (time ? `<span class="ls-nowrap"><span class="ls-icon" data-icon="${icon}" aria-hidden="true"></span>${label} ${esc(time)}</span>` : "");
+  const parts = [part("sunrise", "日の出", info?.sunrise), part("sunset", "日の入り", info?.sunset)].filter(Boolean);
+  return parts.length ? `<p class="day-sun">${parts.join(" ")}</p>` : "";
 }
 
 // 1日ぶん（今日・明日・見たい日）の天気の HTML（気圧の帯・1時間ごと）
@@ -671,9 +678,9 @@ function dayHtml(data, index, now, hour, target = null) {
   const rows = dayRows(data, index, now);
   const key = addDays(localYmd(now, data.offset), index);
   const info = dayInfo(data, index, now);
-  const title = index === 0 ? "今日" : index === 1 ? "明日" : "📅 予定の日";
+  const title = index === 0 ? "今日" : index === 1 ? "明日" : `<span class="ls-icon" data-icon="calendar" aria-hidden="true"></span>予定の日`;
   const th = target ? target.hour : null;
-  const badge = !target ? "" : index > 1 ? (th === null ? "" : `<span class="target-badge">${th}時ごろ</span>`) : `<span class="target-badge">📅 予定${th === null ? "" : `・${th}時`}</span>`;
+  const badge = !target ? "" : index > 1 ? (th === null ? "" : `<span class="target-badge">${th}時ごろ</span>`) : `<span class="target-badge"><span class="ls-icon" data-icon="calendar" aria-hidden="true"></span>予定${th === null ? "" : `・${th}時`}</span>`;
   if (!rows.length) {
     return `<section class="ls-panel day"><h2 class="day-title">${title} <small>${esc(dayLabel(key))}</small>${badge}</h2><p class="ls-hint">この日の情報がまだありません。</p></section>`;
   }
@@ -701,6 +708,7 @@ function dayHtml(data, index, now, hour, target = null) {
     <div class="day-head">
       <h2 class="day-title">${title} <small>${esc(dayLabel(key))}</small>${badge}</h2>
       <p class="day-weather"><span aria-hidden="true">${esc(w.emoji)}</span> <span class="ls-nowrap">${esc(w.label)}</span> <b class="max">${esc(deg(info?.max))}</b>/<b class="min">${esc(deg(info?.min))}</b>${info?.pop === null || info?.pop === undefined ? "" : ` <span class="pop">☔${esc(Math.round(info.pop))}%</span>`}</p>
+      ${sunHtml(info)}
     </div>
     <p class="band-label">気圧の変化の目安</p>
     <div class="band" role="img" aria-label="${esc(`気圧の変化の目安：${summary.replace(/\n/g, "、")}`)}">${cells}</div>
@@ -784,14 +792,14 @@ if (botLink) {
     if (!saved.ok) return renderBot(saved.error === "url" ? "GAS の …/exec の URL を入れてね（?key= のない ② の URL）" : "この端末に残せませんでした");
     renderBot("確かめています…");
     const res = await pingBot(saved.url);
-    renderBot(res.ok ? `✅ ${res.bot}（版 ${res.version}）とつなぎました` : "つながりませんでした。URL と、ボットのデプロイ（アクセスできるユーザー：全員）を確かめてね");
+    renderBot(res.ok ? `${res.bot}（版 ${res.version}）とつなぎました` : "つながりませんでした。URL と、ボットのデプロイ（アクセスできるユーザー：全員）を確かめてね");
   });
   $("botClear").addEventListener("click", () => {
     botLink.clear();
     bot.line = "";
     renderBot("つなぐのをやめました");
   });
-  if (botLink.get()) pingBot().then((res) => renderBot(res.ok ? `✅ ${res.bot}（版 ${res.version}）とつないでいます` : "いまは、くらぶボットにつながりません"));
+  if (botLink.get()) pingBot().then((res) => renderBot(res.ok ? `${res.bot}（版 ${res.version}）とつないでいます` : "いまは、くらぶボットにつながりません"));
   renderBot();
 }
 
