@@ -41,7 +41,7 @@
 
   <!-- 地点を足す（押したとき・現在地が使えないとき） -->
   <section id="addPanel" class="ls-panel" aria-labelledby="addTitle" hidden>
-    <h2 id="addTitle" class="ls-panel-title">📍 地点を足す</h2>
+    <h2 id="addTitle" class="ls-panel-title"><span class="ls-icon" data-icon="place" aria-hidden="true"></span>地点を足す</h2>
     <p id="geoNote" class="ls-hint geo-note" hidden></p>
     <form id="searchForm" class="search-row" role="search">
       <input id="searchInput" class="ls-input" type="search" maxlength="40" placeholder="地名（例：名古屋）" autocomplete="off" enterkeyhint="search" aria-label="地名">
@@ -65,10 +65,10 @@
           <input id="emojiCustom" class="ls-picker-custom" maxlength="8" placeholder="✏️" autocomplete="off" enterkeyhint="done" aria-label="カスタムのしるし（好きな絵文字を1つ）">
         </div>
       </div>
-      <button id="savePlace" class="ls-button is-primary is-block" type="button">＋ 地点を覚える</button>
+      <button id="savePlace" class="ls-button is-primary is-block" type="button"><span class="ls-icon" data-icon="add" aria-hidden="true"></span>地点を覚える</button>
     </div>
     <div class="form-actions">
-      <button id="useHere" class="ls-button is-block" type="button">📍 いまの場所を足す</button>
+      <button id="useHere" class="ls-button is-block" type="button"><span class="ls-icon" data-icon="place" aria-hidden="true"></span>いまの場所を足す</button>
       <button id="addCancel" class="ls-button is-block" type="button">やめる</button>
     </div>
   </section>
@@ -77,7 +77,7 @@
   <section id="visitPanel" class="ls-panel visit" hidden>
     <p class="visit-text"><span id="visitFrom">送ってもらった</span>「<b id="visitName"></b>」<span id="visitWhen"></span>を見ています</p>
     <div class="form-actions">
-      <button id="visitSave" class="ls-button is-primary is-block" type="button">＋ この地点を覚える</button>
+      <button id="visitSave" class="ls-button is-primary is-block" type="button"><span class="ls-icon" data-icon="add" aria-hidden="true"></span>この地点を覚える</button>
       <button id="visitClose" class="ls-button is-block" type="button">閉じる</button>
     </div>
   </section>
@@ -92,9 +92,9 @@
       <div class="ls-skeleton now-skeleton"></div>
     </div>
     <p id="nowNote" class="ls-hint now-note" hidden></p>
-    <button id="retry" class="ls-button is-block" type="button" hidden>🔄 もう一度</button>
+    <button id="retry" class="ls-button is-block" type="button" hidden><span class="ls-icon" data-icon="refresh" aria-hidden="true"></span>もう一度</button>
     <!-- くらぶボットとつないだ人だけ：この地点を、ボットの天気の知らせに足す（ボットのトークに文を入れて開く） -->
-    <a id="notifyBtn" class="ls-button is-block" href="#" hidden>🔔 この地点を、くらぶボットの知らせに足す</a>
+    <a id="notifyBtn" class="ls-button is-block" href="#" hidden><span class="ls-icon" data-icon="bell" aria-hidden="true"></span>この地点を、くらぶボットの知らせに足す</a>
   </section>
 
   <!-- 今日・明日 -->
@@ -121,7 +121,7 @@
       <summary><span class="ls-fold-icon" aria-hidden="true">🔔</span>天気の知らせを LINE で受けとる（くわしい人向け）</summary>
       <div class="ls-fold-body">
         <p class="ls-hint">雨・気圧の変化・気温の大きな変わり目がある日だけ、決めた時間に知らせるボットを、自分で持てます。くらぶのツール共通の「くらぶボット」の、☁️ 天気の機能です。配布用のシートをコピーして、自分の公式アカウントとつなぎます（30分くらい・無料）。</p>
-        <a class="ls-button is-block" href="https://katsuan.github.io/qlove-bot/docs/setup.html" target="_blank" rel="noopener">📘 つなぎ方を見る</a>
+        <a class="ls-button is-block" href="https://katsuan.github.io/qlove-bot/docs/setup.html" target="_blank" rel="noopener"><span class="ls-icon" data-icon="notebook" aria-hidden="true"></span>つなぎ方を見る</a>
         <p class="sub-title">🔗 くらぶボットとつなぐ</p>
         <p class="ls-hint">ボットの GAS エディタで showWebhookUrl を実行したときの、② の URL（合言葉なし）を入れます。くらぶのほかのツールも、同じ URL を読みます（LINE の中とブラウザは、それぞれで入れます）。</p>
         <div class="search-row">

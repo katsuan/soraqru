@@ -25,6 +25,8 @@ const ui = {
 
 // 文字を HTML に入れられる形にする（& < > " ' を置きかえる）
 const esc = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+// Q キットの線アイコン（HTML の文字で。名前は Q キットの kit.html の「線アイコン」）
+const iconHtml = (name) => `<span class="ls-icon" data-icon="${name}" aria-hidden="true"></span>`;
 
 // いまの地点・天気を端末に残す。残せなかったら知らせる
 function persist() {
@@ -59,11 +61,11 @@ function renderPlaceBar() {
   $("placeBar").innerHTML =
     chip("here", "📍", "現在地") +
     state.places.map((p) => chip(p.id, p.emoji, p.name)).join("") +
-    (state.places.length < MAX_PLACES ? '<button class="ls-chip is-small add-chip" type="button" data-add>＋ 地点</button>' : "");
+    (state.places.length < MAX_PLACES ? '<button class="ls-chip is-small add-chip" type="button" data-add>' + iconHtml("add") + '地点</button>' : "");
   $("placesMeta").textContent = state.places.length ? `${state.places.length}か所` : "";
   $("placeList").innerHTML = state.places.length
     ? state.places
-        .map((p) => `<li><span>${esc(p.emoji)} ${esc(p.name)}</span><button class="ls-button is-small" type="button" data-rename="${esc(p.id)}">✏️ 呼び名</button><button class="mini" type="button" data-remove="${esc(p.id)}" aria-label="${esc(p.name)}を消す">✕</button></li>`)
+        .map((p) => `<li><span>${esc(p.emoji)} ${esc(p.name)}</span><button class="ls-button is-small" type="button" data-rename="${esc(p.id)}">${iconHtml("edit")}呼び名</button><button class="mini" type="button" data-remove="${esc(p.id)}" aria-label="${esc(p.name)}を消す">${iconHtml("close")}</button></li>`)
         .join("")
     : '<li class="ls-hint">まだありません。上の「＋ 地点」から足せます。</li>';
 }
@@ -162,7 +164,7 @@ $("searchForm").addEventListener("submit", async (e) => {
     const list = parseGeocode(...jsons);
     ui.results = list;
     $("results").innerHTML = list.length
-      ? list.map((r, i) => `<li><button class="ls-button is-block result" type="button" data-result="${i}">📍 ${esc(r.name)}<small>${esc(r.sub)}</small></button></li>`).join("")
+      ? list.map((r, i) => `<li><button class="ls-button is-block result" type="button" data-result="${i}"><span class="result-name">${iconHtml("place")}${esc(r.name)}</span><small>${esc(r.sub)}</small></button></li>`).join("")
       : "";
     if (!list.length) {
       err.textContent = `「${text}」が見つかりませんでした。市や町の名前で探してみてね`;
@@ -364,14 +366,14 @@ async function findVisitPlace(seq) {
     }
     if (seq !== ui.seq) return false;
     if (!found) {
-      renderEmpty("🔎", `「${ui.visit.query}」の場所が見つかりませんでした。上の「＋ 地点」から探してね。`);
+      renderEmpty("search", `「${ui.visit.query}」の場所が見つかりませんでした。上の「＋ 地点」から探してね。`);
       return false;
     }
     Object.assign(ui.visit, { lat: found.lat, lon: found.lon });
     $("visitName").textContent = ui.visit.name;
     return true;
   } catch {
-    if (seq === ui.seq) renderEmpty("📡", "場所を探せませんでした。つながったら「もう一度」を押してね。", true);
+    if (seq === ui.seq) renderEmpty("offline", "場所を探せませんでした。つながったら「もう一度」を押してね。", true);
     return false;
   }
 }
@@ -387,7 +389,7 @@ async function showHere(place, seq) {
     if (before) {
       render(place, before.data, before.at, `${geoMessage()}（前に取れた現在地の情報です）`);
     } else {
-      renderEmpty("📍", ui.geo === "denied" ? "位置情報が使えないため、現在地の天気は出せません。" : "現在地がわかりませんでした。");
+      renderEmpty("place", ui.geo === "denied" ? "位置情報が使えないため、現在地の天気は出せません。" : "現在地がわかりませんでした。");
     }
     if (!state.places.length) openAdd(geoMessage());
     return;
@@ -424,7 +426,7 @@ async function loadFor(place, seq) {
   if (hit?.fresh) return;
   if (navigator.onLine === false) {
     if (hit) render(place, hit.data, hit.at, `電波がないため、${timeLabel(hit.at)}の情報です`);
-    else renderEmpty("📡", "電波がつながらないので、天気を読みこめません。つながったら「もう一度」を押してね。", true);
+    else renderEmpty("offline", "電波がつながらないので、天気を読みこめません。つながったら「もう一度」を押してね。", true);
     return;
   }
   try {
@@ -437,7 +439,7 @@ async function loadFor(place, seq) {
   } catch {
     if (seq !== ui.seq) return;
     if (hit) render(place, hit.data, hit.at, `新しい情報を読みこめなかったため、${timeLabel(hit.at)}の情報です`);
-    else renderEmpty("🌫️", "天気を読みこめませんでした。少しあとで「もう一度」を押してね。", true);
+    else renderEmpty("warn", "天気を読みこめませんでした。少しあとで「もう一度」を押してね。", true);
   }
 }
 
@@ -475,7 +477,7 @@ function renderEmpty(icon, text, retry = false) {
   ui.shown = null;
   $("nowPanel").setAttribute("aria-busy", "false");
   $("nowAt").textContent = "";
-  $("nowBody").innerHTML = `<div class="ls-empty"><span class="ls-empty-icon" aria-hidden="true">${esc(icon)}</span><p>${esc(text)}</p></div>`;
+  $("nowBody").innerHTML = `<div class="ls-empty"><span class="ls-empty-icon ls-icon" data-icon="${esc(icon)}" aria-hidden="true"></span><p>${esc(text)}</p></div>`;
   $("nowNote").hidden = true;
   $("retry").hidden = !retry;
   $("days").innerHTML = "";
