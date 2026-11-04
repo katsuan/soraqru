@@ -35,7 +35,7 @@ export function dayCard(place, data, index, now = new Date()) {
   let detail = dayText(data, index, now).replace(/^【[^】]*】\n/, "") || "この日の情報がまだありません";
   // 出どころは1つずつ1行に。現在地の地名を国土地理院で調べたとき（named: 2）だけ、地名の出どころも
   const credits = [CREDIT, ...(place?.id === "here" && place?.named === 2 ? [PLACE_CREDIT] : [])];
-  const tail = `\n\n気圧は3時間の変わり方から出した目安です。\n${credits.join("\n")}`;
+  const tail = `\n\n気圧は6時間の下がり方から出した目安です。\n${credits.join("\n")}`;
   if ([...detail].length + [...tail].length > DETAIL_MAX) detail = [...detail].slice(0, DETAIL_MAX - [...tail].length - 1).join("") + "…";
   return new URLSearchParams({
     headerTitle: `🌤️ ${day}の空のごきげん`,

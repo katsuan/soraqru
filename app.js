@@ -692,7 +692,7 @@ function dayHtml(data, index, now, hour, target = null) {
     const lv = r && r.level !== null ? LEVELS[r.level] : null;
     const past = index === 0 && h < hour;
     const nowMark = index === 0 && h === hour;
-    const title = `${h}時 ${lv ? lv.label : "—"}${r && r.change !== null ? `（3時間で ${r.change > 0 ? "+" : ""}${r.change.toFixed(1)} hPa）` : ""}`;
+    const title = `${h}時 ${lv ? lv.label : "—"}${r && r.drop !== null && r.drop > 0 ? `（6時間で ${r.drop.toFixed(1)} hPa 下がる）` : ""}`;
     return `<span class="cell${past ? " is-past" : ""}${nowMark ? " is-now" : ""}${th === h ? " is-target" : ""}" style="--c:${lv ? lv.color : "transparent"}" title="${esc(title)}"></span>`;
   }).join("");
   // 日の出・日の入りの札（その時間の札のすぐあとに入れる。今日の、もう過ぎたものはうすく）

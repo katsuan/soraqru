@@ -1,7 +1,9 @@
 // そらくる（SoraQru）：Open-Meteo の返事の読みこみと、気圧の変化の目安。画面には触らない（テストで呼ぶ）
 //
-// 目安の決め方は KazoQ の予備（q-kazoq/01_27_ZUTOOL_GATEWAY_METEO.js）・SQriptable の気圧カードと同じ：
-// 3時間でどれだけ変わるか（上がっても下がっても）1 hPa 未満＝通常・2 未満＝やや注意・3 未満＝注意・それ以上＝警戒。
+// 目安の決め方は SQriptable の気圧カード・KazoQ の予備（q-kazoq/03_27_ZUTOOL_GATEWAY_METEO.js）・くらぶボットの天気と同じ（2026-11 から。
+// 頭痛ーるの段階と、87 の市で 72% 合う。前の「3時間前とくらべる」は 32%）：
+//   3時間のかたまり（0〜2時・3〜5時…）ごとに、かたまりの頭の9時間前〜頭に始まる「6時間で下がった幅」のいちばん大きいもの。
+//   上がるほうは数えない。2 hPa 未満＝通常・3.5 未満＝やや注意・4 未満＝注意・それ以上＝警戒。
 // 医療の予測ではないので、画面では「気圧の変化の目安」と呼ぶ。
 // 読まれるところ：app.js・js/card.js・js/link.js・js/place-search.js・js/store.js（テストは test/soraqru.test.mjs）
 // 外からも：くらぶボット（~/GitHub/q-qlove-bot）のテストが、このファイルの関数を読んで同じ答えかを見る（関数の名前を変えるときは向こうも）
@@ -19,14 +21,31 @@ export const LEVELS = [
 
 const HOURS_KEEP = 72; // 今日・明日・あさって（電波がないまま日をまたいでも、今日・明日が残る）
 
-/** 3時間の変わり方（hPa）→ 段階 0〜3。数でないときは null */
-export function levelOf(change) {
-  if (change === null || change === undefined || change === "") return null;
-  const value = Math.abs(Number(change));
+/** 6時間で下がった幅（hPa。上がったときは 0 以下）→ 段階 0〜3。数でないときは null */
+export function levelOf(drop) {
+  if (drop === null || drop === undefined || drop === "") return null;
+  const value = Number(drop);
   if (!Number.isFinite(value)) return null;
-  if (value < 1) return 0;
-  if (value < 2) return 1;
-  return value < 3 ? 2 : 3;
+  if (value < 2) return 0;
+  if (value < 3.5) return 1;
+  return value < 4 ? 2 : 3;
+}
+
+/**
+ * その時刻の「6時間で下がった幅」（hPa）。時刻 t のかたまりの頭（0・3・6…時）の9時間前〜頭に始まる6時間の、下がった幅のいちばん大きいもの。
+ * hpaOf は時刻 → 気圧（ないときは null）。どの6時間も気圧がそろわなければ null
+ */
+export function dropAt(t, hpaOf) {
+  const hour = Number(t.slice(11, 13));
+  const head = shiftHours(t, -(hour % 3));
+  let drop = null;
+  for (let k = 0; k <= 9; k++) {
+    const from = shiftHours(head, -k);
+    const a = hpaOf(from);
+    const b = hpaOf(shiftHours(from, 6));
+    if (a !== null && b !== null) drop = Math.max(drop ?? -Infinity, a - b);
+  }
+  return drop === null ? null : round1(drop);
 }
 
 // 小数1けたに丸める
@@ -56,7 +75,7 @@ export function forecastUrl(lat, lon, days = 3) {
     hourly: "pressure_msl,temperature_2m,weather_code,precipitation_probability,is_day",
     daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset",
     timezone: "auto",
-    // 0時の「3時間の変わり方」に前の日の夜が要る
+    // 0時の「6時間で下がった幅」に前の日の夕方から、明日の夜に、あさっての朝までが要る
     past_days: "1",
     forecast_days: String(Math.min(Math.max(Math.round(Number(days)) || 3, 1), FORECAST_MAX_DAYS))
   });
@@ -65,9 +84,10 @@ export function forecastUrl(lat, lon, days = 3) {
 
 /**
  * Open-Meteo の返事 → そらくるの形。読めないとき（壊れた・欠けた返事）は null
- *   { offset（その地点の UTC からのずれ・秒）, hours: [{ t, hpa, temp, code, pop, day, level, change }], days: [{ date, code, max, min, pop, sunrise, sunset }] }
+ *   { offset（その地点の UTC からのずれ・秒）, hours: [{ t, hpa, temp, code, pop, day, level, change, drop }], days: [{ date, code, max, min, pop, sunrise, sunset }] }
  *   sunrise・sunset はその地点の時刻（"6:05"）。わからなければ null
- * hours は今日の0時から 72 時間まで。level は3時間前（時刻で探す）とくらべた段階（どちらかの気圧がない時間は null）
+ * hours は今日の0時から 72 時間まで。change は3時間前（時刻で探す）からの変わり方（いまの向きを出す）、drop は6時間で下がった幅（dropAt）、
+ * level は drop から出した段階（気圧がそろわない時間は null）
  */
 export function parseForecast(json, now = new Date(), maxHours = HOURS_KEEP) {
   if (!json || typeof json !== "object") return null;
@@ -85,6 +105,7 @@ export function parseForecast(json, now = new Date(), maxHours = HOURS_KEEP) {
     const hpa = hpaAt.get(t) ?? null;
     const before = hpaAt.get(shiftHours(t, -3)) ?? null;
     const change = hpa !== null && before !== null ? round1(hpa - before) : null;
+    const drop = dropAt(t, (x) => hpaAt.get(x) ?? null);
     hours.push({
       t,
       hpa: hpa === null ? null : round1(hpa),
@@ -93,7 +114,8 @@ export function parseForecast(json, now = new Date(), maxHours = HOURS_KEEP) {
       pop: finite(col("precipitation_probability")[i]),
       day: finite(col("is_day")[i]) === 0 ? 0 : 1,
       change,
-      level: levelOf(change)
+      drop,
+      level: levelOf(drop)
     });
   });
   // 気圧が1つもないものは使えない
@@ -151,7 +173,7 @@ export function cleanForecast(v) {
   const hours = v.hours
     .slice(0, HOURS_KEEP)
     .filter((r) => r && typeof r === "object" && typeof r.t === "string" && TIME.test(r.t))
-    .map((r) => ({ t: r.t, hpa: num(r.hpa), temp: num(r.temp), code: num(r.code), pop: num(r.pop), day: r.day === 0 ? 0 : 1, change: num(r.change), level: levelOf(num(r.change)) }));
+    .map((r) => ({ t: r.t, hpa: num(r.hpa), temp: num(r.temp), code: num(r.code), pop: num(r.pop), day: r.day === 0 ? 0 : 1, change: num(r.change), drop: num(r.drop), level: levelOf(num(r.drop)) }));
   if (!hours.some((r) => r.hpa !== null)) return null;
   const days = v.days
     .slice(0, 4)
@@ -210,7 +232,8 @@ export function dayInfo(data, index, now = new Date()) {
 }
 
 /**
- * やや注意より上の時間をまとめる：[{ from, to（その時間の終わり。15時台までなら 16）, level（いちばん強い段階）, dir（"down"・"up"・""） }]
+ * やや注意より上の時間をまとめる：[{ from, to（その時間の終わり。15時台までなら 16）, level（いちばん強い段階）, dir（"down"） }]
+ * 段階は下がるほうだけを見るので、向きはいつも "down"（下がる。これから下がる前ぶれの時間も入る）
  */
 export function alertRanges(rows) {
   const out = [];
@@ -220,16 +243,15 @@ export function alertRanges(rows) {
       if (cur && r.hour === cur.to) {
         cur.to = r.hour + 1;
         cur.level = Math.max(cur.level, r.level);
-        cur.sum += r.change || 0;
       } else {
-        cur = { from: r.hour, to: r.hour + 1, level: r.level, sum: r.change || 0 };
+        cur = { from: r.hour, to: r.hour + 1, level: r.level, dir: "down" };
         out.push(cur);
       }
     } else {
       cur = null;
     }
   }
-  return out.map(({ sum, ...x }) => ({ ...x, dir: sum < 0 ? "down" : sum > 0 ? "up" : "" }));
+  return out;
 }
 
 /** 「15〜18時 注意（下がる）」 */

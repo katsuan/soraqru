@@ -54,25 +54,41 @@ function sample({ pressure = () => 1013, offset = 32400 } = {}) {
 }
 
 // ---- 気圧の段階 ----
-test("段階：3時間で 1 未満＝通常・2 未満＝やや注意・3 未満＝注意・それ以上＝警戒（上がっても下がっても）", () => {
-  const cases = [[0, 0], [0.9, 0], [-0.99, 0], [1, 1], [-1.9, 1], [2, 2], [2.9, 2], [-3, 3], [8, 3]];
-  for (const [change, level] of cases) assert.equal(M.levelOf(change), level, String(change));
+test("段階：6時間で下がった幅が 2 未満＝通常・3.5 未満＝やや注意・4 未満＝注意・それ以上＝警戒（上がるほうは数えない）", () => {
+  const cases = [[0, 0], [1.9, 0], [-5, 0], [2, 1], [3.4, 1], [3.5, 2], [3.9, 2], [4, 3], [8, 3]];
+  for (const [drop, level] of cases) assert.equal(M.levelOf(drop), level, String(drop));
   for (const bad of [null, undefined, "", NaN, "x", Infinity]) assert.equal(M.levelOf(bad), null, String(bad));
   assert.deepEqual(M.LEVELS.map((l) => l.label), ["通常", "やや注意", "注意", "警戒"]);
   assert.deepEqual(M.LEVELS.map((l) => l.color), ["#7FA7D9", "#E8B931", "#F08A24", "#E5534B"]);
 });
 
-test("段階は3時間前とくらべる（0時は前の日の21時と）", () => {
-  // 今日の 0 時から 1 時間に 0.8 hPa ずつ下がる → 3時間で 2.4（注意）
-  const data = M.parseForecast(sample({ pressure: (h) => (h < 0 ? 1015 : 1015 - 0.8 * (h + 1)) }), NOW);
+test("段階は3時間のかたまりごと：かたまりの頭の9時間前〜頭に始まる6時間で、いちばん下がった幅（下がる前ぶれの時間も入る）", () => {
+  // 今日の6時まで 1015 で平ら、6時から 1時間に 0.7 hPa ずつ下がる
+  const data = M.parseForecast(sample({ pressure: (h) => (h < 6 ? 1015 : 1015 - 0.7 * (h - 6)) }), NOW);
   const today = M.dayRows(data, 0, NOW);
   assert.equal(today.length, 24);
   assert.equal(today[0].hour, 0);
-  assert.equal(today[0].change, -0.8); // 前の日の21時（1015）とくらべる
-  assert.equal(today[0].level, 0);
-  assert.equal(today[1].level, 1);
-  assert.equal(today[5].change, -2.4);
-  assert.equal(today[5].level, 2);
+  assert.deepEqual(today.slice(0, 3).map((r) => r.level), [0, 0, 0]); // 0〜2時：6時までの6時間は平ら
+  assert.equal(today[3].drop, 2.1); // 3時から9時で 2.1 下がる（3時はまだ平らでも、前ぶれで やや注意）
+  assert.deepEqual(today.slice(3, 6).map((r) => r.level), [1, 1, 1]);
+  assert.equal(today[6].drop, 4.2); // 6時から12時
+  assert.equal(today[6].level, 3);
+  assert.equal(today[7].change, -0.7); // 向き（3時間前とくらべる）は、いまのまま
+  // 上がるだけの日は、どれだけ上がっても通常
+  const up = M.dayRows(M.parseForecast(sample({ pressure: (h) => 1000 + h }), NOW), 0, NOW);
+  assert.ok(up.every((r) => r.level === 0));
+});
+
+test("段階は、Q のツール共通の見本（q-oqrn の data/pressure-level.json）と同じ（SQriptable・KazoQ・くらぶボットもこの決め方）", async () => {
+  const { checkPressureLevels } = await import(path.join(OQRN, "tools/qtest/pressure-level.mjs"));
+  // 見本の hpa は 0時からの1時間ごと。そらくるは時刻（"2026-11-03T05:00"）で探すので、同じ形の時刻にしてわたす
+  const timeOf = (i) => new Date(Date.UTC(2026, 10, 3, i)).toISOString().slice(0, 16);
+  const ZUTOOL = [0, 2, 3, 4]; // そらくるの段階 0〜3 → 見本の番号（頭痛ーるの 0・2・3・4）
+  const version = checkPressureLevels((hpa, i) => {
+    const level = M.levelOf(M.dropAt(timeOf(i), (t) => { const k = hpa.findIndex((_, n) => timeOf(n) === t); return k >= 0 ? hpa[k] : null; }));
+    return level === null ? 0 : ZUTOOL[level];
+  });
+  assert.ok(version);
 });
 
 test("注意の時間帯をまとめる：つづく時間は1つ、いちばん強い段階と向き", () => {
@@ -121,10 +137,10 @@ test("ところどころ欠けた返事：読めるところだけ。daily が�
   assert.equal(today.length, 23); // 7時が抜ける
   const five = today.find((r) => r.hour === 5);
   assert.equal(five.hpa, null);
-  assert.equal(five.level, null);
-  assert.equal(today.find((r) => r.hour === 8).level, null); // 3時間前（5時）の気圧がない
-  assert.equal(today.find((r) => r.hour === 10).level, null); // 3時間前（7時）の時刻が読めない
-  assert.equal(today.find((r) => r.hour === 9).level, 0);
+  assert.equal(five.level, 0); // 段階は、そのかたまりのほかの6時間から出す（1つ欠けても止まらない）
+  assert.equal(today.find((r) => r.hour === 8).change, null); // 向き：3時間前（5時）の気圧がない
+  assert.equal(today.find((r) => r.hour === 10).change, null); // 向き：3時間前（7時）の時刻が読めない
+  assert.equal(today.find((r) => r.hour === 9).change, 0);
   assert.equal(five.temp, null);
   const info = M.dayInfo(data, 0, NOW);
   assert.equal(info.max, null);
@@ -285,7 +301,8 @@ test("カード：1日1枚。今日と明日は2枚（2枚目は card=）・今�
   assert.equal(p.get("date"), "10/23（金）");
   // 天気・気圧の時間帯は、それぞれ1行に
   const today = p.get("detail");
-  assert.match(today, /^🌧️ 雨 22°\/14° ☔60%\n🌀 気圧（10時から）\n・15〜20時 警戒（下がる）\n\n/);
+  // 15〜17時に 3.6 下がる → その前ぶれの 12時から、下がりを見る9時間あとまで 注意
+  assert.match(today, /^🌧️ 雨 22°\/14° ☔60%\n🌀 気圧（10時から）\n・12〜24時 注意（下がる）\n\n/);
   assert.match(today, /天気データ：Open-Meteo\.com（CC BY 4\.0）$/);
   // 現在地の地名を国土地理院で調べたときだけ、地名の出どころを次の行に
   const here = C.cardParams({ id: "here", name: "名古屋市中村区", named: 2, lat: 35.17, lon: 136.88, src: "gps" }, data, NOW, [0]).get("detail");
@@ -299,7 +316,7 @@ test("カード：1日1枚。今日と明日は2枚（2枚目は card=）・今�
   const tomorrow = new URLSearchParams(cards[0]);
   assert.equal(tomorrow.get("title"), "名古屋の明日");
   assert.equal(tomorrow.get("date"), "10/24（土）");
-  assert.match(tomorrow.get("detail"), /^☁️ くもり 19°\/12° ☔30%\n🌀 気圧：1日を通して 通常\n\n/);
+  assert.match(tomorrow.get("detail"), /^☁️ くもり 19°\/12° ☔30%\n🌀 気圧\n・0〜3時 やや注意（下がる）\n\n/);
   assert.match(tomorrow.get("detail"), /Open-Meteo/);
   for (const card of [p, tomorrow]) assert.ok([...card.get("detail")].length <= 300);
   // 明日だけ・今日だけ
@@ -312,7 +329,9 @@ test("カード：1日1枚。今日と明日は2枚（2枚目は card=）・今�
   const night = C.cardParams(null, M.parseForecast(sample(), NOW), new Date("2026-10-23T13:30:00Z"), [0]).get("detail");
   assert.match(night, /🌀 気圧（22時から）：通常/);
   // 時間帯がいくつもある日は、1つずつの行に（4つ目からは「ほか」）
-  const many = C.cardParams(null, M.parseForecast(sample({ pressure: (h) => 1013 + (Math.floor(h / 3) % 2 ? 0 : (h % 3) * 1.5) }), NOW), new Date("2026-10-22T15:30:00Z"), [0]).get("detail");
+  const manyData = M.parseForecast(sample(), NOW);
+  manyData.hours.forEach((r, i) => (r.level = Math.floor(i / 2) % 2)); // 2時間ごとに やや注意・通常（段階の決め方とは別に、並べ方だけ見る）
+  const many = C.cardParams(null, manyData, new Date("2026-10-22T15:30:00Z"), [0]).get("detail");
   assert.match(many, /🌀 気圧\n・\d+〜\d+時 [^\n]+\n・\d+〜\d+時 [^\n]+\n・\d+〜\d+時 [^\n]+\n・ほか\d+か所/);
 });
 
