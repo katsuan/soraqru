@@ -695,12 +695,22 @@ function dayHtml(data, index, now, hour, target = null) {
     const title = `${h}時 ${lv ? lv.label : "—"}${r && r.change !== null ? `（3時間で ${r.change > 0 ? "+" : ""}${r.change.toFixed(1)} hPa）` : ""}`;
     return `<span class="cell${past ? " is-past" : ""}${nowMark ? " is-now" : ""}${th === h ? " is-target" : ""}" style="--c:${lv ? lv.color : "transparent"}" title="${esc(title)}"></span>`;
   }).join("");
+  // 日の出・日の入りの札（その時間の札のすぐあとに入れる。今日の、もう過ぎたものはうすく）
+  const nowMin = index === 0 ? localHour(now, data.offset) * 60 + new Date(now.getTime() + data.offset * 1000).getUTCMinutes() : -1;
+  const sunCards = [["sunrise", "日の出", info?.sunrise], ["sunset", "日の入り", info?.sunset]]
+    .filter(([, , time]) => time)
+    .map(([icon, label, time]) => {
+      const [hh, mm] = time.split(":").map(Number);
+      const past = index === 0 && hh * 60 + mm < nowMin ? " is-past" : "";
+      return { hour: hh, html: `<li class="hour sun-mark${past}"><span class="h">${label}</span><span class="ls-icon" data-icon="${icon}" aria-hidden="true"></span><span class="t">${esc(time)}</span></li>` };
+    });
   const hours = rows
     .map((r) => {
       const ww = weatherOf(r.code, r.day);
       const lv = r.level === null ? null : LEVELS[r.level];
       const cls = (index === 0 && r.hour < hour ? " is-past" : index === 0 && r.hour === hour ? " is-now" : "") + (th === r.hour ? " is-target" : "");
-      return `<li class="hour${cls}"><span class="h">${index === 0 && r.hour === hour ? "いま" : `${r.hour}時`}</span><span class="e" aria-hidden="true">${esc(ww.emoji)}</span><span class="t">${r.temp === null ? "—" : esc(Math.round(r.temp))}°</span><span class="p" style="--c:${lv ? lv.color : "transparent"}">${r.pop === null ? "" : `${esc(r.pop)}%`}</span><span class="sr">${esc(ww.label)}・気圧 ${lv ? esc(lv.label) : "—"}</span></li>`;
+      const card = `<li class="hour${cls}"><span class="h">${index === 0 && r.hour === hour ? "いま" : `${r.hour}時`}</span><span class="e" aria-hidden="true">${esc(ww.emoji)}</span><span class="t">${r.temp === null ? "—" : esc(Math.round(r.temp))}°</span><span class="p" style="--c:${lv ? lv.color : "transparent"}">${r.pop === null ? "" : `${esc(r.pop)}%`}</span><span class="sr">${esc(ww.label)}・気圧 ${lv ? esc(lv.label) : "—"}</span></li>`;
+      return card + sunCards.filter((c) => c.hour === r.hour).map((c) => c.html).join("");
     })
     .join("");
   return `

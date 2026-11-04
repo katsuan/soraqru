@@ -183,3 +183,7 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .day-sun { flex-basis: 100%; display: flex; flex-wrap: wrap; gap: var(--ls-space-xs) var(--ls-space-m); margin: 0; color: var(--ls-subtext); font-size: 13px; }
 .day-sun .ls-icon { margin-right: var(--ls-space-xs); }
 
+/* 1時間ごとの札のあいだの、日の出・日の入りの札（地は白く、枠の線だけ。字はうすく） */
+.hour.sun-mark { align-content: start; background: transparent; box-shadow: inset 0 0 0 1px var(--ls-line); }
+.hour.sun-mark .ls-icon { width: 20px; height: 20px; margin: 2px 0; color: var(--ls-subtext); }
+.hour.sun-mark .t { font-size: 12px; }
