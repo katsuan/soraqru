@@ -66,10 +66,10 @@
 | `js/link.js` | URL の受け渡し（送ったカードから開くリンク・ほかのツールから開いたときの `?at=`・`?q=`・`?date=`・`?hour=`・`?from=` を読む） |
 | `js/place-search.js` | 場所の名前で探す（国土地理院の住所さがし → Open-Meteo の地名さがし） |
 | `js/place-name.js`・`data/muni.json` | 現在地の市区町村の名前（国土地理院の逆ジオコーダー＋市区町村の表。表は `tools/muni.py` で作る） |
-| `test/` | `npm test`（`node --test test/`）。気圧の段階（q-oqrn の見本 `data/pressure-level.json` とくらべる）・返事の読みこみ（壊れた・欠けた返事）・1日ぶんの札・端末の中身・カード（おくるんの組み立てをそのまま動かし、`q-oqrn/tools/qtest/fake-gas.js` の `checkMessages` で LINE が受けつける形かを見る） |
+| テスト | テストは、公開しない別の所に置いています（公開の前に GitHub Actions が読んで動かします） |
 | `tools/icon.py` | アイコン・ロゴ・OGP |
 
-確かめ方：`npm test` と `node ../q-oqrn/tools/qtest/check-code.mjs .`
+確かめ方：`~/GitHub/q-dev/bin/qdev run q-soraqru`（テスト）と `node ../q-oqrn/tools/qtest/check-code.mjs .`
 
 ## 天気の知らせ（くらぶボット。確かめ中）
 
