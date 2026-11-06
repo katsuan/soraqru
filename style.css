@@ -1,5 +1,5 @@
 /* そらくる（SoraQru）。部品（見出しの行・カード・チップ・入力欄・ボタン・開閉・トースト）は Q キット
- * （https://katsuan.github.io/line-share/shared/ui.css）。ここには、そらくるの色と字、そらくるにしかない見た目（気圧の帯・1時間ごと）だけを置く */
+ * （https://katsuan.github.io/oqrn/shared/ui.css）。ここには、そらくるの色と字、そらくるにしかない見た目（気圧の帯・1時間ごと）だけを置く */
 :root {
   --ls-accent: #3a56d6;
   --ls-accent-strong: #2f47b6;

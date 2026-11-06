@@ -88,5 +88,5 @@
 ## 公開したときにしたこと
 
 1. `index.html` の noindex を外した
-2. おくるん（line-share）の `data/hub-links.json` に `key: "soraqru"`（グループは「毎日・あそび」）、`backup/app.js` の一覧に `["soraqru:", "そらくる", "soraqru"]` を足した
+2. おくるん（oqrn）の `data/hub-links.json` に `key: "soraqru"`（グループは「毎日・あそび」）、`backup/app.js` の一覧に `["soraqru:", "そらくる", "soraqru"]` を足した
 3. ポートフォリオ（`portfolio-site` の `index.html`・`conneqt-tech.json`）に載せた

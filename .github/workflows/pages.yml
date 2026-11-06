@@ -20,7 +20,7 @@ concurrency:
 
 jobs:
   publish:
-    uses: katsuan/line-share/.github/workflows/q-pages.yml@main
+    uses: katsuan/oqrn/.github/workflows/q-pages.yml@main
     secrets: inherit # テストは公開しない所にある（Q_DEV_KEY で読む）
     with:
       dev: true
