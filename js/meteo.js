@@ -1,9 +1,9 @@
 // そらくる（SoraQru）：Open-Meteo の返事の読みこみと、気圧の変化の目安。画面には触らない（テストで呼ぶ）
 //
-// 目安の決め方は SQriptable の気圧カード・KAZOQ の予備（q-kazoq/03_27_zutool_gateway_meteo.js）・くらぶボットの天気と同じ（2026-11 から。
-// 頭痛ーるの段階と、87 の市で 72% 合う。前の「3時間前とくらべる」は 32%）：
-//   3時間のかたまり（0〜2時・3〜5時…）ごとに、かたまりの頭の9時間前〜頭に始まる「6時間で下がった幅」のいちばん大きいもの。
-//   上がるほうは数えない。2 hPa 未満＝通常・3.5 未満＝やや注意・4 未満＝注意・それ以上＝警戒。
+// 目安の決め方は SQriptable の気圧カード・KAZOQ の予備（q-kazoq/03_27_zutool_gateway_meteo.js）・くらぶボットの天気と同じ（2026-11-08 から。
+// 頭痛ーるの段階と、毎朝の記録3日ぶんで 77% 合う。11/4 の決め方は 71%。くわしくは q-oqrn の docs/pressure.md）：
+//   3時間のかたまり（0〜2時・3〜5時…）ごとに、かたまりの頭の6時間前〜頭に始まる「9時間で下がった幅」のいちばん大きいもの。
+//   上がるほうは数えない。2 hPa 未満＝通常・3.5 未満＝やや注意・4.5 未満＝注意・それ以上＝警戒。
 // 医療の予測ではないので、画面では「気圧の変化の目安」と呼ぶ。
 // 読まれるところ：app.js・js/card.js・js/link.js・js/place-search.js・js/store.js（テストは test/soraqru.test.mjs）
 // 外からも：くらぶボット（~/GitHub/q-qlove-bot）のテストが、このファイルの関数を読んで同じ答えかを見る（関数の名前を変えるときは向こうも）
@@ -21,28 +21,28 @@ export const LEVELS = [
 
 const HOURS_KEEP = 72; // 今日・明日・あさって（電波がないまま日をまたいでも、今日・明日が残る）
 
-/** 6時間で下がった幅（hPa。上がったときは 0 以下）→ 段階 0〜3。数でないときは null */
+/** 9時間で下がった幅（hPa。上がったときは 0 以下）→ 段階 0〜3。数でないときは null */
 export function levelOf(drop) {
   if (drop === null || drop === undefined || drop === "") return null;
   const value = Number(drop);
   if (!Number.isFinite(value)) return null;
   if (value < 2) return 0;
   if (value < 3.5) return 1;
-  return value < 4 ? 2 : 3;
+  return value < 4.5 ? 2 : 3;
 }
 
 /**
- * その時刻の「6時間で下がった幅」（hPa）。時刻 t のかたまりの頭（0・3・6…時）の9時間前〜頭に始まる6時間の、下がった幅のいちばん大きいもの。
- * hpaOf は時刻 → 気圧（ないときは null）。どの6時間も気圧がそろわなければ null
+ * その時刻の「9時間で下がった幅」（hPa）。時刻 t のかたまりの頭（0・3・6…時）の6時間前〜頭に始まる9時間の、下がった幅のいちばん大きいもの。
+ * hpaOf は時刻 → 気圧（ないときは null）。どの9時間も気圧がそろわなければ null
  */
 export function dropAt(t, hpaOf) {
   const hour = Number(t.slice(11, 13));
   const head = shiftHours(t, -(hour % 3));
   let drop = null;
-  for (let k = 0; k <= 9; k++) {
+  for (let k = 0; k <= 6; k++) {
     const from = shiftHours(head, -k);
     const a = hpaOf(from);
-    const b = hpaOf(shiftHours(from, 6));
+    const b = hpaOf(shiftHours(from, 9));
     if (a !== null && b !== null) drop = Math.max(drop ?? -Infinity, a - b);
   }
   return drop === null ? null : round1(drop);
@@ -75,7 +75,7 @@ export function forecastUrl(lat, lon, days = 3) {
     hourly: "pressure_msl,temperature_2m,weather_code,precipitation_probability,is_day",
     daily: "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset",
     timezone: "auto",
-    // 0時の「6時間で下がった幅」に前の日の夕方から、明日の夜に、あさっての朝までが要る
+    // 0時の「9時間で下がった幅」に前の日の夕方から、明日の夜に、あさっての朝までが要る
     past_days: "1",
     forecast_days: String(Math.min(Math.max(Math.round(Number(days)) || 3, 1), FORECAST_MAX_DAYS))
   });
@@ -86,7 +86,7 @@ export function forecastUrl(lat, lon, days = 3) {
  * Open-Meteo の返事 → そらくるの形。読めないとき（壊れた・欠けた返事）は null
  *   { offset（その地点の UTC からのずれ・秒）, hours: [{ t, hpa, temp, code, pop, day, level, change, drop }], days: [{ date, code, max, min, pop, sunrise, sunset }] }
  *   sunrise・sunset はその地点の時刻（"6:05"）。わからなければ null
- * hours は今日の0時から 72 時間まで。change は3時間前（時刻で探す）からの変わり方（いまの向きを出す）、drop は6時間で下がった幅（dropAt）、
+ * hours は今日の0時から 72 時間まで。change は3時間前（時刻で探す）からの変わり方（いまの向きを出す）、drop は9時間で下がった幅（dropAt）、
  * level は drop から出した段階（気圧がそろわない時間は null）
  */
 export function parseForecast(json, now = new Date(), maxHours = HOURS_KEEP) {
