@@ -41,7 +41,7 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .result[aria-pressed="true"] { border-color: var(--ls-accent); background: var(--ls-accent-soft); }
 .name-box { display: grid; gap: 8px; }
 .name-box[hidden] { display: none; }
-.sub-title { margin: 0; padding-top: 8px; border-top: 1px dashed var(--ls-line); font-size: 14px; font-weight: 800; }
+.sub-title { margin: 0; padding-top: 8px; border-top: 1px dashed var(--ls-line); font-size: 14px; font-weight: 700; }
 .form-actions { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 8px; }
 .form-actions [hidden] { display: none; }
 .geo-note { padding: 8px 16px; border-radius: 8px; background: var(--ls-accent-soft); color: var(--ls-accent-ink); font-weight: 700; }
@@ -55,36 +55,36 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 /* いま */
 .now { display: grid; gap: 8px; }
 .now-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.now-place { overflow: hidden; margin: 0; font-size: 18px; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+.now-place { overflow: hidden; margin: 0; font-size: 18px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 .now-at { flex: 0 0 auto; color: var(--ls-subtext); font-size: 12px; font-weight: 700; }
 .now-skeleton { height: 92px; border-radius: 14px; }
 .day-skeleton { height: 150px; border-radius: 14px; }
 .wait { margin: 8px 0 0; white-space: pre-line; }
 .now-main { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 16px; }
 .now-emoji { font-size: 54px; line-height: 1; }
-.now-temp { margin: 0; font-size: 44px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.now-temp { margin: 0; font-size: 44px; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
 .now-temp small { margin-left: 2px; font-size: 18px; }
-.now-label { margin: 4px 0 0; font-size: 15px; font-weight: 800; }
+.now-label { margin: 4px 0 0; font-size: 15px; font-weight: 700; }
 .now-label > span, .now-range { color: var(--ls-subtext); font-size: 13px; font-weight: 700; }
 /* 狭い幅（320px）では「最高」と「最低」のあいだで折り返す（それぞれは途中で切らない） */
 .now-range .ls-nowrap { white-space: nowrap; }
 .now-hpa { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 8px 16px; border-radius: 16px; background: var(--ls-surface-sub); font-size: 14px; font-weight: 700; }
 .now-hpa b { font-size: 18px; font-variant-numeric: tabular-nums; }
 .trend { color: var(--ls-subtext); }
-.level-pill { display: inline-grid; place-items: center; min-width: 64px; min-height: 24px; padding: 0 8px; border-radius: 8px; background: var(--c); color: #1d2340; font-size: 13px; font-weight: 800; }
-.now-note { margin: 0; padding: 8px 16px; border-radius: 8px; background: var(--ls-surface-sub); color: var(--ls-text); font-weight: 800; }
+.level-pill { display: inline-grid; place-items: center; min-width: 64px; min-height: 24px; padding: 0 8px; border-radius: 8px; background: var(--c); color: #1d2340; font-size: 13px; font-weight: 700; }
+.now-note { margin: 0; padding: 8px 16px; border-radius: 8px; background: var(--ls-surface-sub); color: var(--ls-text); font-weight: 700; }
 .now-note[hidden], #retry[hidden] { display: none; }
 
 /* 今日・明日 */
 .day { display: grid; gap: 8px; }
 .day-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 8px; }
-.day-title { margin: 0; font-size: 18px; font-weight: 800; }
+.day-title { margin: 0; font-size: 18px; font-weight: 700; }
 .day-title small { color: var(--ls-subtext); font-size: 13px; }
 .day-weather { margin: 0; font-size: 14px; font-weight: 700; }
 .day-weather .max { color: var(--ls-text); }
 .day-weather .min { color: var(--ls-subtext); }
 .day-weather .pop { color: var(--ls-subtext); }
-.band-label { margin: 4px 0 0; color: var(--ls-subtext); font-size: 12px; font-weight: 800; }
+.band-label { margin: 4px 0 0; color: var(--ls-subtext); font-size: 12px; font-weight: 700; }
 
 /* 気圧の帯：1時間ずつ 24 こ */
 .band { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); gap: 2px; height: 30px; }
@@ -92,17 +92,17 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .cell.is-past { opacity: var(--past); }
 .cell.is-now { outline: 2px solid var(--ls-text); outline-offset: 1px; z-index: 1; }
 .axis { display: flex; justify-content: space-between; margin-top: -4px; color: var(--ls-subtext); font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.summary { margin: 0; font-size: 14px; font-weight: 800; line-height: 1.6; white-space: pre-line; }
+.summary { margin: 0; font-size: 14px; font-weight: 700; line-height: 1.6; white-space: pre-line; }
 
 /* 1時間ごと：横に送る */
 .hours { display: grid; grid-auto-flow: column; grid-auto-columns: 50px; gap: 4px; margin: 2px -4px 0; padding: 4px 4px 8px; overflow-x: auto; list-style: none; scroll-snap-type: x proximity; scrollbar-width: thin; }
 .hour { position: relative; display: grid; justify-items: center; gap: 2px; padding: 8px 0 0; border-radius: 8px; background: var(--ls-surface-sub); scroll-snap-align: start; overflow: hidden; }
 .hour.is-past { opacity: 0.5; }
 .hour.is-now { box-shadow: inset 0 0 0 2px var(--ls-accent); }
-.hour .h { color: var(--ls-subtext); font-size: 11px; font-weight: 800; }
+.hour .h { color: var(--ls-subtext); font-size: 11px; font-weight: 700; }
 .hour.is-now .h { color: var(--ls-accent-ink); }
 .hour .e { font-size: 20px; line-height: 1.2; }
-.hour .t { font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.hour .t { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .hour .p { align-self: end; width: 100%; min-height: 18px; padding: 2px 0; border-top: 4px solid var(--c); color: var(--ls-subtext); font-size: 10px; font-weight: 700; text-align: center; }
 /* 読み上げ用の文字（見せない）。.hour の中に閉じこめる（外に出ると、ページが横にスクロールできてしまう） */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
@@ -129,7 +129,7 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 .cp-head b { font-size: 15px; }
 .cp-head small { font-size: 10px; opacity: 0.95; }
 .cp-body { flex: 1; display: grid; align-content: start; gap: 8px; padding: 12px 14px; }
-.cp-title { margin: 0; font-size: 16px; font-weight: 800; overflow-wrap: anywhere; }
+.cp-title { margin: 0; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
 .cp-detail { margin: 0; padding: 8px 10px; border-radius: 10px; background: #e7ebfa; color: #3a56d6; white-space: pre-line; overflow-wrap: anywhere; }
 
 /* 覚えた地点 */
@@ -159,7 +159,7 @@ input[type="search"].ls-input { -webkit-appearance: none; appearance: none; }
 
 /* 見たい日（ほかのツールから開いたとき）：予定の日の札・時刻の印 */
 .target-day { border: 2px solid var(--ls-accent); }
-.target-badge { display: inline-block; margin-left: 8px; color: var(--ls-accent-ink); font-size: 13px; font-weight: 800; white-space: nowrap; }
+.target-badge { display: inline-block; margin-left: 8px; color: var(--ls-accent-ink); font-size: 13px; font-weight: 700; white-space: nowrap; }
 .cell.is-target { outline: 3px solid var(--ls-accent); outline-offset: 1px; z-index: 1; }
 .hour.is-target { box-shadow: inset 0 0 0 3px var(--ls-accent); background: var(--ls-accent-soft); }
 .hour.is-target .h { color: var(--ls-accent-ink); }
