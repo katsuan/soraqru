@@ -2,11 +2,12 @@
 // 読まれるところ：app.js・js/card.js（テストは test/soraqru.test.mjs）
 import { parseTarget, validLatLon } from "./meteo.js?v=202611012034";
 import { cleanName } from "./store.js?v=202611012034";
+import { NAMES } from "./names.js?v=202611012034";
 
 export const PAGE_URL = "https://katsuan.github.io/soraqru/";
 
 // 開いたツールの名前（?from=）。知らない名前は使わない
-export const FROM_TOOLS = { yuqsaki: "ゆくさき", saqsen: "さくせん盤", qlovebot: "くらぶボット", kazoq: "KAZOQ" };
+export const FROM_TOOLS = { yuqsaki: NAMES.yuqsaki, saqsen: NAMES.saqsen, qlovebot: NAMES.qlovebot, kazoq: NAMES.kazoq };
 
 /** 送ったカードのボタンで開く URL。地名で探した地点だけ場所を入れる（現在地・いまの場所から足した地点は入れない） */
 export function openUrl(place) {

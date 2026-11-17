@@ -7,6 +7,7 @@ import {
 import { MAX_NAME, MAX_PLACES, PLACE_EMOJIS, addPlace, placeMark, cached, cleanName, load, putCache, removePlace, restorePlace, save, blank, KEY } from "./js/store.js?v=202611012034";
 import { cardParams, dayCard } from "./js/card.js?v=202611012034";
 import { readVisit } from "./js/link.js?v=202611012034";
+import { NAMES } from "./js/names.js?v=202611012034";
 import { gsiSearchUrl, pickGsi } from "./js/place-search.js?v=202611012034";
 import { fineLatLon, placeName } from "./js/place-name.js?v=202611012034";
 import { dayHtml, esc, iconHtml, legendHtml, targetNoteHtml } from "./js/day-view.js?v=202611012034";
@@ -739,7 +740,7 @@ if (botLink) {
     bot.line = "";
     renderBot("つなぐのをやめました");
   });
-  if (botLink.get()) pingBot().then((res) => renderBot(res.ok ? `${res.bot}（版 ${res.version}）とつないでいます` : "いまは、くらぶボットにつながりません"));
+  if (botLink.get()) pingBot().then((res) => renderBot(res.ok ? `${res.bot}（版 ${res.version}）とつないでいます` : `いまは、${NAMES.qlovebot}につながりません`));
   renderBot();
 }
 

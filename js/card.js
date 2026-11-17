@@ -2,6 +2,7 @@
 // 読まれるところ：app.js（テストは test/soraqru.test.mjs）
 import { LEVELS, dayInfo, dayLabel, dayRows, daySummary, deg, weatherOf, addDays, localHour, localYmd } from "./meteo.js?v=202611012034";
 import { openUrl } from "./link.js?v=202611012034";
+import { NAMES } from "./names.js?v=202611012034";
 
 export const CARD_COLOR = "#3A56D6"; // ロゴの群青
 export const CREDIT = "天気データ：Open-Meteo.com（CC BY 4.0）";
@@ -46,7 +47,7 @@ export function dayCard(place, data, index, now = new Date()) {
     theme: "custom",
     customColor: CARD_COLOR,
     showAction: "true",
-    actionLabel: "🌤️ そらくるで見る",
+    actionLabel: `🌤️ ${NAMES.app}で見る`,
     actionUrl: openUrl(place)
   });
 }
